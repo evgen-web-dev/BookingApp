@@ -6,11 +6,9 @@ namespace BookingApp.Infrastructure;
 public class AppDbContext : DbContext
 {
     public DbSet<User> Users { get; set; }
+    public DbSet<UserRole> UserRoles { get; set; }
     
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-    {
-        
-    }
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) {}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,5 +20,7 @@ public class AppDbContext : DbContext
             .HasOne(role => role.User)
             .WithMany(user => user.UserRoles)
             .HasForeignKey(role => role.UserId);
+        
+        modelBuilder.Entity<User>().HasIndex(user => user.Email).IsUnique();
     }
 }

@@ -22,11 +22,15 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetUserById(int id, CancellationToken cancellationToken = default)
     {
-        return await _appDbContext.Users.FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
+        return await _appDbContext.Users
+            .Include(user => user.UserRoles)
+            .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
     }
 
     public async Task<User?> GetUserByEmail(string email, CancellationToken cancellationToken = default)
     {
-        return await _appDbContext.Users.FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
+        return await _appDbContext.Users
+            .Include(user => user.UserRoles)
+            .FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
     }
 }

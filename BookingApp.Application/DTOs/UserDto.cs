@@ -1,6 +1,8 @@
-namespace BookingApp.Domain;
+using BookingApp.Domain;
 
-public class User
+namespace BookingApp.Application.DTOs;
+
+public class UserDto
 {
     public int Id { get; set; }
     public required string FirstName { get; set; }
@@ -8,6 +10,5 @@ public class User
     public required string LastName { get; set; }
     public required string Email { get; set; }
     public required DateOnly DateOfBirth { get; set; }
-    public string PasswordHash { get; set; } = string.Empty;
-    public List<UserRole> UserRoles { get; set; } = [];
+    public List<Role> UserRoles { get; set; } = [];
 }

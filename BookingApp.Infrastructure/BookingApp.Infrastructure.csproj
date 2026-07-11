@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\BookingApp.Application\BookingApp.Application.csproj" />
     <ProjectReference Include="..\BookingApp.Domain\BookingApp.Domain.csproj" />
   </ItemGroup>
 
@@ -12,7 +13,6 @@
 
   <ItemGroup>
     <Folder Include="EntityTypeConfigurations\" />
-    <Folder Include="Repositories\" />
   </ItemGroup>
 
   <PropertyGroup>

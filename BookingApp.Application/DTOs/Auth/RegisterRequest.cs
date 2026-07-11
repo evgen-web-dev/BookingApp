@@ -1,4 +1,4 @@
-namespace BookingApp.Application.DTOs;
+namespace BookingApp.Application.DTOs.Auth;
 
 public record RegisterRequest(
     string? FirstName,

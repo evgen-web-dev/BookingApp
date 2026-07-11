@@ -1,9 +1,7 @@
-using System.Collections.ObjectModel;
-using BookingApp.Application.DTOs;
+using BookingApp.Application.DTOs.Auth;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain;
 using Mapster;
-using MapsterMapper;
 using Microsoft.AspNetCore.Identity;
 
 namespace BookingApp.Infrastructure.Services;
@@ -106,5 +104,17 @@ public class AuthService : IAuthService
             null,
             userFromMappedRequest.Adapt<RegisterResponse>()
         );
+    }
+
+    public async Task<AuthResult<LoginResponse>> LoginAsync(LoginRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+
+        if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
+        {
+            return new AuthResult<LoginResponse>(false, ["Invalid email/password"]);
+        }
+        
+        return new AuthResult<LoginResponse>(true);
     }
 }

@@ -1,4 +1,4 @@
-using BookingApp.Application.DTOs;
+using BookingApp.Application.DTOs.Auth;
 using BookingApp.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,5 +27,18 @@ public class AuthController : ControllerBase
         }
 
         return BadRequest(new ErrorResponse(registerAuthResult.Errors ?? []));
+    }
+    
+    [HttpPost("login")]
+    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
+    {
+        var loginAuthResult = await _authService.LoginAsync(request);
+
+        if (loginAuthResult.Succeeded)
+        {
+            return Ok();
+        }
+
+        return BadRequest(new ErrorResponse(loginAuthResult.Errors ?? []));
     }
 }

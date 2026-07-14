@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <PackageReference Include="Mapster" Version="10.0.10" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.11" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookingApp.Infrastructure;
+namespace BookingApp.Infrastructure.Persistence;
 
 public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {

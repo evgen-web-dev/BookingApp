@@ -1,9 +1,9 @@
 using BookingApp.Application;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain;
-using BookingApp.Infrastructure;
+using BookingApp.Infrastructure.Persistence;
 using BookingApp.Infrastructure.Seeders;
-using BookingApp.Infrastructure.Services;
+using BookingApp.Application.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;

@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <Folder Include="EntityTypeConfigurations\" />
+    <Folder Include="Services\" />
   </ItemGroup>
 
   <PropertyGroup>

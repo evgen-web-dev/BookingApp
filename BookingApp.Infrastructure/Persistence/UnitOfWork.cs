@@ -38,7 +38,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     {
         if (_dbContextTransaction == null)
         {
-            throw new InvalidOperationException("Transaction has not been started yet");
+            throw new InvalidOperationException("Could not commit: transaction has not been started yet");
         }
         
         await _dbContextTransaction.CommitAsync(cancellationToken);
@@ -50,7 +50,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     {
         if (_dbContextTransaction == null)
         {
-            throw new InvalidOperationException("Transaction has not been started yet");
+            throw new InvalidOperationException("Could not rollback: transaction has not been started yet");
         }
         
         await _dbContextTransaction.RollbackAsync(cancellationToken);

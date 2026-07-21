@@ -8,14 +8,12 @@ namespace BookingApp.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IUserRepository _userRepository;
-    private readonly IRoleRepository _roleRepository;
+    private readonly IUserIdentityService _userIdentityService;
     
-    public AuthService(IUnitOfWork unitOfWork, IUserRepository userRepository, IRoleRepository roleRepository)
+    public AuthService(IUnitOfWork unitOfWork, IUserIdentityService userIdentityService)
     {
         _unitOfWork = unitOfWork;
-        _userRepository = userRepository;
-        _roleRepository = roleRepository;
+        _userIdentityService = userIdentityService;
     }
     
     public async Task<AuthResult<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -24,7 +22,7 @@ public class AuthService : IAuthService
         {
             return new AuthResult<RegisterResponse>(
                 false,
-                ["Could not create account", $"Invalid role provided: {request.Role}"]
+                ["CouldNotCreateAccount", "InvalidRoleProvided"]
             );
         }
 
@@ -35,13 +33,13 @@ public class AuthService : IAuthService
         
         try
         {
-            var createUserResult = await _userRepository.CreateAsync(userFromMappedRequest, request.Password);
+            var createUserResult = await _userIdentityService.CreateAsync(userFromMappedRequest, request.Password);
             if (!createUserResult.Succeeded)
             {
                 return new AuthResult<RegisterResponse>(false, createUserResult.Errors.ToList());
             }
 
-            var assignUserToRole = await _userRepository.AddToRoleAsync(userFromMappedRequest, request.Role);
+            var assignUserToRole = await _userIdentityService.AddToRoleAsync(userFromMappedRequest, request.Role);
             if (!assignUserToRole.Succeeded)
             {
                 return new AuthResult<RegisterResponse>(false, assignUserToRole.Errors.ToList());
@@ -63,6 +61,11 @@ public class AuthService : IAuthService
 
     public async Task<AuthResult<LoginResponse>> LoginAsync(LoginRequest request)
     {
+        var checkCredentialsResult = await _userIdentityService.VerifyCredentialsAsync(request.Email, request.Password);
+        if (!checkCredentialsResult.Succeeded)
+        {
+            return new AuthResult<LoginResponse>(false, ["InvalidEmailOrPassword"]);
+        }
         
         return new AuthResult<LoginResponse>(true);
     }

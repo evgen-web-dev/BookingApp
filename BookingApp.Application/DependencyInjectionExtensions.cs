@@ -1,5 +1,7 @@
 using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Auth;
+using BookingApp.Application.Interfaces;
+using BookingApp.Application.Services;
 using BookingApp.Domain;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,5 +27,10 @@ public static class DependencyInjectionExtensions
             .NewConfig()
             .Map(dest => dest.Id, src => src.Id)
             .IgnoreNonMapped(true);
+    }
+
+    public static void AddApplicationServices(this IServiceCollection services)
+    {
+        services.AddScoped<IAuthService, AuthService>();
     }
 }

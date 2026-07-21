@@ -18,27 +18,27 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
-        var registerAuthResult = await _authService.RegisterAsync(request, cancellationToken);
+        var registerResult = await _authService.RegisterAsync(request, cancellationToken);
 
-        if (registerAuthResult.Succeeded)
+        if (registerResult.Succeeded)
         {
             // TODO - update later to CreatedAtAction / CreatedAtRoute - when implement UsersController
-            return Ok(registerAuthResult.Response);
+            return Ok(registerResult.Value);
         }
 
-        return BadRequest(new ErrorResponse(registerAuthResult.Errors ?? []));
+        return BadRequest(new ErrorResponse(registerResult.Errors.ToList()));
     }
     
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
-        var loginAuthResult = await _authService.LoginAsync(request);
+        var loginResult = await _authService.LoginAsync(request);
 
-        if (loginAuthResult.Succeeded)
+        if (loginResult.Succeeded)
         {
             return Ok();
         }
 
-        return BadRequest(new ErrorResponse(loginAuthResult.Errors ?? []));
+        return BadRequest(new ErrorResponse(loginResult.Errors.ToList()));
     }
 }

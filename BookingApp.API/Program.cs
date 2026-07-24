@@ -1,3 +1,4 @@
+using BookingApp.API;
 using BookingApp.Application;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain;
@@ -24,6 +25,9 @@ builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices();
 builder.Services.AddInfrastructurePersistence(builder.Configuration);
 
+builder.Services.AddAuthorization();
+builder.Services.AddJwtAuthentication(builder.Configuration);
+
 var app = builder.Build();
 
 await IdentitySeeder.SeedRolesAsync(app.Services);
@@ -41,6 +45,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

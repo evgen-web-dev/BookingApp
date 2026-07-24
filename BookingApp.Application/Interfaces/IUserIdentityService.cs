@@ -8,5 +8,5 @@ public interface IUserIdentityService
 {
     Task<OperationResult<CreateUserResult>> CreateAsync(User user, string password);
     Task<OperationResult> AddToRoleAsync(User user, string role);
-    Task<OperationResult> VerifyCredentialsAsync(string email, string password);
+    Task<OperationResult<AuthenticatedUserResult>> AuthenticateAsync(string email, string password);
 }

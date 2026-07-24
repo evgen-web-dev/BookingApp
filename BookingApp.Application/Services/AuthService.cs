@@ -59,10 +59,11 @@ public class AuthService : IAuthService
 
     public async Task<OperationResult<LoginResponse>> LoginAsync(LoginRequest request)
     {
-        var checkCredentialsResult = await _userIdentityService.VerifyCredentialsAsync(request.Email, request.Password);
-        if (!checkCredentialsResult.Succeeded)
+        var authenticatedUserResult = await _userIdentityService.AuthenticateAsync(request.Email, request.Password);
+
+        if (!authenticatedUserResult.Succeeded)
         {
-            return OperationResult<LoginResponse>.Failure(["InvalidEmailOrPassword"]);
+            return OperationResult<LoginResponse>.Failure(authenticatedUserResult.Errors);
         }
 
         return OperationResult<LoginResponse>.Success(new LoginResponse());

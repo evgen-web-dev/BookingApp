@@ -1,6 +1,7 @@
 using BookingApp.Infrastructure.Identity;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain;
+using BookingApp.Infrastructure.Auth;
 using BookingApp.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ public static class DependencyInjectionExtensions
     public static void AddInfrastructureServices(this IServiceCollection services)
     {
         services.AddScoped<IUserIdentityService, UserIdentityService>();
+        services.AddScoped<ITokenService, JsonWebTokenService>();
     }
     
     public static void AddInfrastructurePersistence(this IServiceCollection services, IConfiguration configuration)

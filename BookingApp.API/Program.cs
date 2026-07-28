@@ -1,13 +1,8 @@
 using BookingApp.API;
 using BookingApp.Application;
-using BookingApp.Application.Interfaces;
-using BookingApp.Domain;
-using BookingApp.Infrastructure.Persistence;
+using BookingApp.Application.DTOs;
 using BookingApp.Infrastructure.Seeders;
-using BookingApp.Application.Services;
 using BookingApp.Infrastructure;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,7 +20,6 @@ builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices();
 builder.Services.AddInfrastructurePersistence(builder.Configuration);
 
-builder.Services.AddAuthorization();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();

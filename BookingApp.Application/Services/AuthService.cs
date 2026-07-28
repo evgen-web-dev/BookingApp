@@ -10,11 +10,13 @@ public class AuthService : IAuthService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserIdentityService _userIdentityService;
+    private readonly ITokenService _tokenService;
     
-    public AuthService(IUnitOfWork unitOfWork, IUserIdentityService userIdentityService)
+    public AuthService(IUnitOfWork unitOfWork, IUserIdentityService userIdentityService, ITokenService tokenService)
     {
         _unitOfWork = unitOfWork;
         _userIdentityService = userIdentityService;
+        _tokenService = tokenService;
     }
     
     public async Task<OperationResult<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -46,7 +48,7 @@ public class AuthService : IAuthService
             await _unitOfWork.CommitAsync(cancellationToken);
             isCommitted = true;
 
-            return OperationResult<RegisterResponse>.Success(new RegisterResponse(createUserResult.Value.Id));
+            return OperationResult<RegisterResponse>.Success(new RegisterResponse(createUserResult.GetValueOrThrow().Id));
         }
         finally
         {
@@ -62,10 +64,13 @@ public class AuthService : IAuthService
         var authenticatedUserResult = await _userIdentityService.AuthenticateAsync(request.Email, request.Password);
 
         if (!authenticatedUserResult.Succeeded)
+            
         {
             return OperationResult<LoginResponse>.Failure(authenticatedUserResult.Errors);
         }
+        
+        var accessToken = _tokenService.GenerateAccessToken(authenticatedUserResult.GetValueOrThrow());
 
-        return OperationResult<LoginResponse>.Success(new LoginResponse());
+        return OperationResult<LoginResponse>.Success(new LoginResponse(accessToken));
     }
 }

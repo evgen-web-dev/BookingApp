@@ -44,6 +44,6 @@ public static class DependencyInjectionExtensions
             });
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer();
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme);
     }
 }

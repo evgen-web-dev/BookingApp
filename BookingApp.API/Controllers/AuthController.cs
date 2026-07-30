@@ -25,7 +25,7 @@ public class AuthController : ControllerBase
         if (registerResult.Succeeded)
         {
             // TODO - update later to CreatedAtAction / CreatedAtRoute - when implement UsersController
-            return Ok(registerResult.GetValueOrThrow());
+            return Ok(registerResult.Value);
         }
 
         return BadRequest(new ErrorResponse(registerResult.Errors.ToList()));
@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
 
         if (loginResult.Succeeded)
         {
-            return Ok(loginResult.GetValueOrThrow());
+            return Ok(loginResult.Value);
         }
 
         return BadRequest(new ErrorResponse(loginResult.Errors.ToList()));

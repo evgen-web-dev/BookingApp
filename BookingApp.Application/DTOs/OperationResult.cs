@@ -14,21 +14,28 @@ public record OperationResult
 
 public record OperationResult<TValue> : OperationResult where TValue : notnull
 {
-    private TValue? _value;
+    public TValue Value { get; private set; } = default!;
 
     private OperationResult() { }
     
-    // OperationResult<T> is guaranteed to have a non-null _value returned only when Succeeded=true, or throw otherwise
-    // (non-nullability is guaranteed in OperationResult<T>.Success)
-    public TValue GetValueOrThrow() => Succeeded ? _value! : throw new InvalidOperationException("Cannot access the value when the operation did not succeed.");
-
-    // Throws ArgumentNullException if null is passed (including OperationResult<TValue>.Success(null!))
-    // to guarantee non-nullability of _value for result with Succeeded=true
     public static OperationResult<TValue> Success(TValue value)
     {
-        ArgumentNullException.ThrowIfNull(value);
-        return new OperationResult<TValue> { Succeeded = true, _value = value };
+        /*
+         Checking for null here to make sure that when Succeeded=true - returned instance of OperationResult always have non-null Value,
+         to prevent cases like:
+         
+            OperationResult<string>.Success(null);
+            or
+            OperationResult<string>.Success(null!);
+            or
+            string? resultStr = null;
+            OperationResult<string>.Success(resultStr);
+            
+            where consumer of OperationResult instance will get/use Value=null when relying on Succeeded=true */
+        return value != null
+            ? new OperationResult<TValue> { Succeeded = true, Value = value }
+            : new OperationResult<TValue> { Succeeded = false };
     }
 
-    public static OperationResult<TValue> Failure(IReadOnlyList<string> errors) => new OperationResult<TValue> { Succeeded = false, Errors = errors };
+    public new static OperationResult<TValue> Failure(IReadOnlyList<string> errors) => new OperationResult<TValue> { Succeeded = false, Errors = errors };
 }

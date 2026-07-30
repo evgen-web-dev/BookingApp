@@ -48,7 +48,7 @@ public class AuthService : IAuthService
             await _unitOfWork.CommitAsync(cancellationToken);
             isCommitted = true;
 
-            return OperationResult<RegisterResponse>.Success(new RegisterResponse(createUserResult.GetValueOrThrow().Id));
+            return OperationResult<RegisterResponse>.Success(new RegisterResponse(createUserResult.Value.Id));
         }
         finally
         {
@@ -69,7 +69,7 @@ public class AuthService : IAuthService
             return OperationResult<LoginResponse>.Failure(authenticatedUserResult.Errors);
         }
         
-        var accessToken = _tokenService.GenerateAccessToken(authenticatedUserResult.GetValueOrThrow());
+        var accessToken = _tokenService.GenerateAccessToken(authenticatedUserResult.Value);
 
         return OperationResult<LoginResponse>.Success(new LoginResponse(accessToken));
     }

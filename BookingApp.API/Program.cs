@@ -1,6 +1,5 @@
 using BookingApp.API;
 using BookingApp.Application;
-using BookingApp.Application.DTOs;
 using BookingApp.Infrastructure.Seeders;
 using BookingApp.Infrastructure;
 using Scalar.AspNetCore;

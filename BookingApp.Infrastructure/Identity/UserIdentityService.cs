@@ -1,5 +1,6 @@
 using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Auth;
+using BookingApp.Application.Errors;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain;
 using Microsoft.AspNetCore.Identity;
@@ -60,7 +61,7 @@ public class UserIdentityService : IUserIdentityService
         // TODO - refactor later to check for lockout as well
         if (user == null || !await _userManager.CheckPasswordAsync(user, password))
         {
-            return OperationResult<AuthenticatedUserResult>.Failure(["InvalidEmailOrPassword"]);
+            return OperationResult<AuthenticatedUserResult>.Failure([AuthErrorCodes.InvalidEmailOrPassword]);
         }
         
         var userRoles = await _userManager.GetRolesAsync(user);

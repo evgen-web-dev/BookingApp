@@ -1,3 +1,4 @@
+using BookingApp.Application.Errors;
 using Microsoft.AspNetCore.Identity;
 
 namespace BookingApp.Infrastructure.Identity;
@@ -18,9 +19,9 @@ public static class IdentityErrorCodesDefaultDenyMapper
         ["PasswordRequiresLower"] = null,
         ["PasswordRequiresUpper"] = null,
         ["PasswordRequiresUniqueChars"] = null,
-        ["DuplicateUserName"] = "InvalidEmailOrUserName",
-        ["DuplicateEmail"] = "InvalidEmailOrUserName",
-        ["InvalidUserName"] = "InvalidEmailOrUserName"
+        ["DuplicateUserName"] = AuthErrorCodes.InvalidEmailOrUserName,
+        ["DuplicateEmail"] = AuthErrorCodes.InvalidEmailOrUserName,
+        ["InvalidUserName"] = AuthErrorCodes.InvalidEmailOrUserName
     };
     
     private static readonly IReadOnlyDictionary<string, string?> _assignUserToRoleErrorCodesMap = new Dictionary<string, string?>
@@ -34,7 +35,7 @@ public static class IdentityErrorCodesDefaultDenyMapper
 
         foreach (var error in errors)
         {
-            // either adding "overriden" error-code like for ["DuplicateUserName"] = "InvalidEmailOrUserName",
+            // either adding "overriden" error-code like for ["DuplicateUserName"] = AuthErrorCodes.InvalidEmailOrUserName,
             // or
             // adding error.Code directly like for ["PasswordTooShort"] = null,
             

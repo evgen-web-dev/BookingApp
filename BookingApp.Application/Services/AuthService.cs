@@ -1,5 +1,6 @@
 using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Auth;
+using BookingApp.Application.Errors;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain;
 using Mapster;
@@ -23,7 +24,7 @@ public class AuthService : IAuthService
     {
         if (!Roles.RolesAvailableForPublicRegistration.Contains(request.Role))
         {
-            return OperationResult<RegisterResponse>.Failure(["CouldNotCreateAccount", "InvalidRoleProvided"]);
+            return OperationResult<RegisterResponse>.Failure([AuthErrorCodes.CouldNotCreateAccount, AuthErrorCodes.InvalidRoleProvided]);
         }
 
         User userFromMappedRequest = request.Adapt<User>();

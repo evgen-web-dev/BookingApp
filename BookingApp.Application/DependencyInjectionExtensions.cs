@@ -1,8 +1,7 @@
-using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Auth;
 using BookingApp.Application.Interfaces;
 using BookingApp.Application.Services;
-using BookingApp.Domain;
+using BookingApp.Domain.Entities;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 

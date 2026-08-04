@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace BookingApp.Domain;
+namespace BookingApp.Domain.Entities;
 
 public class User : IdentityUser<int>
 {

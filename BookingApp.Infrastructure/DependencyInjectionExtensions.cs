@@ -1,6 +1,6 @@
 using BookingApp.Infrastructure.Identity;
 using BookingApp.Application.Interfaces;
-using BookingApp.Domain;
+using BookingApp.Domain.Entities;
 using BookingApp.Infrastructure.Auth;
 using BookingApp.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;

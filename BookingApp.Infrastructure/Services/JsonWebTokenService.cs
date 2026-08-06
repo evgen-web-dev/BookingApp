@@ -6,9 +6,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
-namespace BookingApp.Infrastructure.Auth;
+namespace BookingApp.Infrastructure.Services;
 
-public class JsonWebTokenService : ITokenService
+public class JsonWebTokenService : IAccessTokenService
 {
     private readonly IOptions<JwtOptions> _jwtOptions;
 

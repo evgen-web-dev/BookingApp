@@ -34,6 +34,16 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
         _dbContextTransaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
     }
 
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        if (_dbContextTransaction == null)
+        {
+            throw new InvalidOperationException("Could not save changes: transaction has not been started yet");
+        }
+        
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task CommitAsync(CancellationToken cancellationToken)
     {
         if (_dbContextTransaction == null)

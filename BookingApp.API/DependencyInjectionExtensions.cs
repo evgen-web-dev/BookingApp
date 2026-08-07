@@ -39,7 +39,7 @@ public static class DependencyInjectionExtensions
                     ),
                     ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromMinutes(3),
+                    ClockSkew = TimeSpan.FromMinutes(2)
                 };
             });
 

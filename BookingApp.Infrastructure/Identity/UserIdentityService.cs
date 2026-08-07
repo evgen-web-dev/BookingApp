@@ -10,6 +10,7 @@ namespace BookingApp.Infrastructure.Identity;
 public class UserIdentityService : IUserIdentityService
 {
     private readonly UserManager<User> _userManager;
+    private const string AuthenticatedUserAbsentEmailExceptionMessage = "Authenticated user has no email on record";
 
     public UserIdentityService(UserManager<User> userManager)
     {
@@ -42,18 +43,6 @@ public class UserIdentityService : IUserIdentityService
         return OperationResult.Success();
     }
 
-    public async Task<OperationResult> VerifyCredentialsAsync(string email, string password)
-    {
-        var user = await _userManager.FindByEmailAsync(email);
-
-        if (user == null || !await _userManager.CheckPasswordAsync(user, password))
-        {
-            return OperationResult.Failure([]);
-        }
-        
-        return OperationResult.Success();
-    }
-
     public async Task<OperationResult<AuthenticatedUserResult>> AuthenticateAsync(string email, string password)
     {
         var user = await _userManager.FindByEmailAsync(email);
@@ -69,7 +58,7 @@ public class UserIdentityService : IUserIdentityService
         return OperationResult<AuthenticatedUserResult>.Success(
             new AuthenticatedUserResult(
                 user.Id, 
-                user.Email ?? throw new InvalidOperationException("Authenticated user has no email on record"), 
+                user.Email ?? throw new InvalidOperationException(AuthenticatedUserAbsentEmailExceptionMessage), 
                 userRoles.ToList()
             )
         );
@@ -89,7 +78,7 @@ public class UserIdentityService : IUserIdentityService
         return OperationResult<AuthenticatedUserResult>.Success(
             new AuthenticatedUserResult(
                 user.Id, 
-                user.Email ?? throw new InvalidOperationException("Authenticated user has no email on record"),
+                user.Email ?? throw new InvalidOperationException(AuthenticatedUserAbsentEmailExceptionMessage),
                 userRoles.ToList()
             )
         );

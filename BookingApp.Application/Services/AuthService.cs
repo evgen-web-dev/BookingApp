@@ -1,5 +1,3 @@
-using System.Net;
-using System.Security.Cryptography;
 using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Auth;
 using BookingApp.Application.Errors;
@@ -8,7 +6,6 @@ using BookingApp.Application.Options.Auth;
 using BookingApp.Domain.Entities;
 using BookingApp.Domain;
 using Mapster;
-using MapsterMapper;
 using Microsoft.Extensions.Options;
 
 namespace BookingApp.Application.Services;
@@ -44,6 +41,24 @@ public class AuthService : IAuthService
         _userSessionOptions = userSessionOptions;
     }
     
+    private async Task SafeRollbackAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _unitOfWork.RollbackAsync(cancellationToken);
+        }
+        catch (Exception e)
+        {
+            // TODO: add ILogger _logger logging for storing info about exception thrown during _unitOfWork.RollbackAsync(cancellationToken) 
+            Console.WriteLine(e);
+        }
+    }
+
+    private void ThrowOnRefreshTokenHashInvalidGeneration()
+    {
+        throw new InvalidOperationException("Could not generate hash for refresh token");    
+    }
+    
     public async Task<OperationResult<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         if (!Roles.RolesAvailableForPublicRegistration.Contains(request.Role))
@@ -54,7 +69,6 @@ public class AuthService : IAuthService
         User userFromMappedRequest = request.Adapt<User>();
         
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
-        var isCommitted = false;
         
         try
         {
@@ -71,13 +85,12 @@ public class AuthService : IAuthService
             }
 
             await _unitOfWork.CommitAsync(cancellationToken);
-            isCommitted = true;
 
             return OperationResult<RegisterResponse>.Success(new RegisterResponse(createUserResult.Value.Id));
         }
         finally
         {
-            if (!isCommitted)
+            if (_unitOfWork.HasActiveTransaction)
             {
                 await SafeRollbackAsync(cancellationToken);
             }
@@ -103,30 +116,33 @@ public class AuthService : IAuthService
         _sessionRepository.Add(newSession);
         
         var newRawRefreshToken = _refreshTokenService.GenerateRefreshToken();
+        if (_refreshTokenService.TryHashRefreshToken(newRawRefreshToken, out var newRefreshTokenHash))
+        {
+            ThrowOnRefreshTokenHashInvalidGeneration();
+        }
+        
         var newRefreshTokenObj = new RefreshToken
         {
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(_userSessionOptions.Value.RefreshTokenLifeTimeDays),
-            TokenHash = _refreshTokenService.HashRefreshToken(newRawRefreshToken),
+            TokenHash = newRefreshTokenHash,
             Session =  newSession
         };
         
         _refreshTokenRepository.Add(newRefreshTokenObj);
         
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
-        var isCommitted = false;
 
         try
         {
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            // throw new Exception("TEST_DEBUGGING_EXCEPTION");
             await _unitOfWork.CommitAsync(cancellationToken);
-            isCommitted = true;
         }
         finally
         {
-            if (!isCommitted)
+            if (_unitOfWork.HasActiveTransaction)
             {
+                // SafeRollbackAsync will catch and "silence" exception if it was thrown whe rolling back a transaction
                 await SafeRollbackAsync(cancellationToken);
             }
         }
@@ -138,16 +154,83 @@ public class AuthService : IAuthService
         );
     }
 
-    private async Task SafeRollbackAsync(CancellationToken cancellationToken)
+    private async Task SaveAndCommitChanges(CancellationToken cancellationToken)
     {
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
+    }
+    
+    public async Task<OperationResult<RefreshResult>> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
+    {
+        if (!_refreshTokenService.TryHashRefreshToken(refreshToken, out var refreshTokenHash))
+        {
+            return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
+        }
+        
+        var currentRefreshTokenObj = await _refreshTokenRepository.FindByHashWithSessionWithoutTracking(refreshTokenHash);
+
+        if (currentRefreshTokenObj is null)
+        {
+            return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
+        }
+        
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        
+        var isSessionExpired = currentRefreshTokenObj.ExpiresAt < DateTime.UtcNow || currentRefreshTokenObj.Session.AbsoluteExpiresAt < DateTime.UtcNow;
+
         try
         {
-            await _unitOfWork.RollbackAsync(cancellationToken);
+            if (isSessionExpired)
+            {
+                await _sessionService.RevokeSession(currentRefreshTokenObj.SessionId, RevocationReason.Expired);
+                await SaveAndCommitChanges(cancellationToken);
+                
+                return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
+            }
+
+            var currentRefreshTokenRevocationResult = await _refreshTokenRepository.Revoke(currentRefreshTokenObj.Id);
+
+            if (currentRefreshTokenRevocationResult is RevokeOutcome.IsAlreadyRevoked)
+            {
+                await _sessionService.RevokeSession(currentRefreshTokenObj.SessionId, RevocationReason.TheftDetected);
+                await SaveAndCommitChanges(cancellationToken);
+                
+                return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
+            }
+
+            var newRawRefreshToken = _refreshTokenService.GenerateRefreshToken();
+            if (!_refreshTokenService.TryHashRefreshToken(newRawRefreshToken, out var newRefreshTokenHash))
+            {
+                ThrowOnRefreshTokenHashInvalidGeneration();
+            }
+
+            _refreshTokenRepository.Add(new RefreshToken
+            {
+                SessionId = currentRefreshTokenObj.SessionId,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(_userSessionOptions.Value.RefreshTokenLifeTimeDays),
+                TokenHash = newRefreshTokenHash,
+            });
+
+            var currentUserDataResult = await _userIdentityService.GetWithRolesById(currentRefreshTokenObj.Session.UserId);
+            if (!currentUserDataResult.Succeeded)
+            {
+                return OperationResult<RefreshResult>.Failure([AuthErrorCodes.ErrorDuringTokenRefresh]);
+            }
+
+            var newAccessToken = _accessTokenService.GenerateAccessToken(currentUserDataResult.Value);
+
+            await SaveAndCommitChanges(cancellationToken);
+            
+            return OperationResult<RefreshResult>.Success(new RefreshResult(newRawRefreshToken, new RefreshResponse(newAccessToken)));
         }
-        catch (Exception e)
+        finally
         {
-            // TODO: add ILogger _logger logging for storing info about exception thrown during _unitOfWork.RollbackAsync(cancellationToken) 
-            Console.WriteLine(e);
+            if (_unitOfWork.HasActiveTransaction)
+            {
+                // SafeRollbackAsync will catch and "silence" exception if it was thrown whe rolling back a transaction
+                await SafeRollbackAsync(cancellationToken);
+            }
         }
     }
 }

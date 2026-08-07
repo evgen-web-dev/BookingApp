@@ -12,6 +12,8 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     {
         _dbContext = dbContext;
     }
+    
+    public bool HasActiveTransaction => _dbContextTransaction != null;
 
     private async Task DisposeDbContextTransaction()
     {

@@ -74,4 +74,24 @@ public class UserIdentityService : IUserIdentityService
             )
         );
     }
+
+    public async Task<OperationResult<AuthenticatedUserResult>> GetWithRolesById(int userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+
+        if (user == null)
+        {
+            return OperationResult<AuthenticatedUserResult>.Failure([AuthErrorCodes.UserNotFound]);
+        }
+        
+        var userRoles = await _userManager.GetRolesAsync(user);
+        
+        return OperationResult<AuthenticatedUserResult>.Success(
+            new AuthenticatedUserResult(
+                user.Id, 
+                user.Email ?? throw new InvalidOperationException("Authenticated user has no email on record"),
+                userRoles.ToList()
+            )
+        );
+    }
 }

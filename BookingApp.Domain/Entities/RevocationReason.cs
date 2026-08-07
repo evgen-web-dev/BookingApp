@@ -2,8 +2,7 @@ namespace BookingApp.Domain.Entities;
 
 public enum RevocationReason
 {
-    LogOut,
+    Logout,
     TheftDetected,
-    AbsoluteExpiry,
-    SlidingExpiry
+    Expired
 }

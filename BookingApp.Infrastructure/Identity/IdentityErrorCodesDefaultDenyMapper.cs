@@ -29,6 +29,12 @@ public static class IdentityErrorCodesDefaultDenyMapper
         ["UserAlreadyInRole"] = null
     };
     
+    private static readonly IReadOnlyDictionary<string, string?> _createRoleErrorCodesMap = new Dictionary<string, string?>
+    {
+        ["InvalidRoleName"] = null,
+        ["DuplicateRoleName"] = null
+    };
+    
     private static List<string> AdaptIdentityErrorCodes(IEnumerable<IdentityError> errors, IReadOnlyDictionary<string, string?> scopedDefaultDenyMap)
     {
         var mappedErrorCodes = new List<string>();
@@ -64,5 +70,10 @@ public static class IdentityErrorCodesDefaultDenyMapper
     public static List<string> AdaptAddUserToRoleErrorCodes(IEnumerable<IdentityError> errors)
     {
         return AdaptIdentityErrorCodes(errors, _assignUserToRoleErrorCodesMap);
+    }
+    
+    public static List<string> AdaptCreateRoleErrorCodes(IEnumerable<IdentityError> errors)
+    {
+        return AdaptIdentityErrorCodes(errors, _createRoleErrorCodesMap);
     }
 }

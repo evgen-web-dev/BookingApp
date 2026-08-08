@@ -16,6 +16,7 @@ public static class DependencyInjectionExtensions
     public static void AddInfrastructureServices(this IServiceCollection services)
     {
         services.AddScoped<IUserIdentityService, UserIdentityService>();
+        services.AddScoped<IRoleIdentityService, RoleIdentityService>();
         services.AddScoped<IAccessTokenService, JsonWebTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ISessionService, SessionService>();

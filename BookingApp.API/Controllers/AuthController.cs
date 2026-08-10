@@ -16,6 +16,7 @@ public class AuthController : ControllerBase
     private readonly IAuthService _authService;
     private readonly IOptions<UserSessionOptions> _userSessionOptions;
     private const string RefreshTokenCookieName = "refreshToken";
+    private const string RefreshTokenCookiePath = "/api/auth";
     
     public AuthController(IAuthService authService, IOptions<UserSessionOptions> userSessionOptions)
     {
@@ -31,8 +32,13 @@ public class AuthController : ControllerBase
             Secure = true, // requires https:// for cookie with "Secure = true" to be stored correctly 
             SameSite = SameSiteMode.Lax,
             MaxAge = TimeSpan.FromDays(maxAgeDays),
-            Path = "/api/auth/refresh"
+            Path = RefreshTokenCookiePath
         });
+    }
+
+    private void DeleteRefreshTokenCookie()
+    {
+        Response.Cookies.Delete(RefreshTokenCookieName, new CookieOptions { Path = RefreshTokenCookiePath });
     }
     
     [HttpPost("register")]
@@ -89,5 +95,27 @@ public class AuthController : ControllerBase
         AppendRefreshTokenCookie(refreshResult.Value.RefreshToken, _userSessionOptions.Value.AbsoluteLifeTimeDays);
         
         return Ok(refreshResult.Value.RefreshResponse);
+    }
+    
+    [HttpPost("logout")]
+    public async Task<ActionResult> LogoutAsync(CancellationToken cancellationToken)
+    {
+        var refreshToken = Request.Cookies[RefreshTokenCookieName] ?? null;
+
+        if (refreshToken is null)
+        {
+            return BadRequest(new ErrorResponse([AuthErrorCodes.InvalidRefreshToken]));
+        }
+
+        DeleteRefreshTokenCookie();
+        
+        var logoutResult = await _authService.LogoutAsync(refreshToken, cancellationToken);
+
+        if (!logoutResult.Succeeded)
+        {
+            return BadRequest(new ErrorResponse(logoutResult.Errors.ToList()));
+        }
+        
+        return Ok();
     }
 }

@@ -20,6 +20,13 @@ public class RefreshTokenRepository : IRefreshTokenRepository
 
     public async Task<RevokeOutcome> Revoke(int tokenId)
     {
+        /*
+        This will be executed on the DB as
+        "UPDATE ... WHERE id = @id AND revoked_at IS NULL" SQL query
+        which will return affectedRowsAmount = 0 only for a case when refresh token of current user
+        was already revoked with using this method.
+        So, as long as this can not happen during "normal" conditions - we assume token-reuse for affectedRowsAmount = 0
+        */
         var affectedRowsAmount = await _dbContext.Set<RefreshToken>()
             .Where(token => 
                 token.Id == tokenId && token.RevokedAt == null)

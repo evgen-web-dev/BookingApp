@@ -16,6 +16,17 @@ public class RefreshTokenService : IRefreshTokenService
     public bool TryHashRefreshToken(string rawToken, out string hash)
     {
         hash = string.Empty;
+
+        /*
+        Base64Url.TryDecodeFromChars may throw when passing some invalid string.
+        For example, a URL-encoded Base64 value may contain percent-encoded characters like %2F, %2B or %3D 
+        which are non-valid Base64Uel characters
+        Base64Url.IsValid before Base64Url.TryDecodeFromChars prevents case like that
+        */
+        if (!Base64Url.IsValid(rawToken))
+        {
+            return false;
+        }
         
         Span<byte> buffer = stackalloc byte[TokenSizeBytes];
 

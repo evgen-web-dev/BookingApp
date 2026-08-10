@@ -59,6 +59,28 @@ public class AuthService : IAuthService
         throw new InvalidOperationException("Could not generate hash for refresh token");    
     }
     
+    private async Task SaveAndCommitChanges(CancellationToken cancellationToken)
+    {
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
+    }
+
+    private async Task<RevokeOutcome> RevokeRefreshTokenAndDetectReuse(RefreshToken refreshToken)
+    {
+        var currentRefreshTokenRevocationResult = await _refreshTokenRepository.Revoke(refreshToken.Id);
+        if (currentRefreshTokenRevocationResult is RevokeOutcome.IsAlreadyRevoked)
+        {
+            HandleRefreshTokenReuse();
+        }
+        
+        return currentRefreshTokenRevocationResult;
+    }
+
+    private void HandleRefreshTokenReuse()
+    {
+        // TODO: complete "force-user-password-change" flow on token-reuse detect
+    }
+    
     public async Task<OperationResult<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         if (!Roles.RolesAvailableForPublicRegistration.Contains(request.Role))
@@ -116,7 +138,7 @@ public class AuthService : IAuthService
         _sessionRepository.Add(newSession);
         
         var newRawRefreshToken = _refreshTokenService.GenerateRefreshToken();
-        if (_refreshTokenService.TryHashRefreshToken(newRawRefreshToken, out var newRefreshTokenHash))
+        if (!_refreshTokenService.TryHashRefreshToken(newRawRefreshToken, out var newRefreshTokenHash))
         {
             ThrowOnRefreshTokenHashInvalidGeneration();
         }
@@ -142,7 +164,7 @@ public class AuthService : IAuthService
         {
             if (_unitOfWork.HasActiveTransaction)
             {
-                // SafeRollbackAsync will catch and "silence" exception if it was thrown whe rolling back a transaction
+                // SafeRollbackAsync will catch and "silence" exception if it was thrown when rolling back a transaction
                 await SafeRollbackAsync(cancellationToken);
             }
         }
@@ -152,12 +174,6 @@ public class AuthService : IAuthService
         return OperationResult<LoginResult>.Success(
             new LoginResult(newRawRefreshToken, new LoginResponse(accessToken))
         );
-    }
-
-    private async Task SaveAndCommitChanges(CancellationToken cancellationToken)
-    {
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        await _unitOfWork.CommitAsync(cancellationToken);
     }
     
     public async Task<OperationResult<RefreshResult>> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
@@ -188,7 +204,7 @@ public class AuthService : IAuthService
                 return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
             }
 
-            var currentRefreshTokenRevocationResult = await _refreshTokenRepository.Revoke(currentRefreshTokenObj.Id);
+            var currentRefreshTokenRevocationResult = await RevokeRefreshTokenAndDetectReuse(currentRefreshTokenObj);
 
             if (currentRefreshTokenRevocationResult is RevokeOutcome.IsAlreadyRevoked)
             {
@@ -228,7 +244,51 @@ public class AuthService : IAuthService
         {
             if (_unitOfWork.HasActiveTransaction)
             {
-                // SafeRollbackAsync will catch and "silence" exception if it was thrown whe rolling back a transaction
+                // SafeRollbackAsync will catch and "silence" exception if it was thrown when rolling back a transaction
+                await SafeRollbackAsync(cancellationToken);
+            }
+        }
+    }
+
+    public async Task<OperationResult> LogoutAsync(string refreshToken, CancellationToken cancellationToken)
+    {
+        if (!_refreshTokenService.TryHashRefreshToken(refreshToken, out var currentRefreshTokenHash))
+        {
+            return OperationResult.Failure([AuthErrorCodes.InvalidRefreshToken]);
+        }
+
+        var currentRefreshTokenObj = await _refreshTokenRepository.FindByHashWithSessionWithoutTracking(currentRefreshTokenHash);
+
+        if (currentRefreshTokenObj is null)
+        {
+            return OperationResult.Failure([AuthErrorCodes.InvalidRefreshToken]);
+        }
+
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var currentRefreshTokenRevocationOutcome = await RevokeRefreshTokenAndDetectReuse(currentRefreshTokenObj);
+
+            var sessionRevocationReason = currentRefreshTokenRevocationOutcome is RevokeOutcome.IsAlreadyRevoked
+                ? RevocationReason.TheftDetected
+                : RevocationReason.Logout;
+
+            var operationResult = currentRefreshTokenRevocationOutcome is RevokeOutcome.IsAlreadyRevoked
+                ? OperationResult.Failure([AuthErrorCodes.InvalidRefreshToken])
+                : OperationResult.Success();
+
+            await _sessionService.RevokeSession(currentRefreshTokenObj.SessionId, sessionRevocationReason);
+            
+            await SaveAndCommitChanges(cancellationToken);
+            
+            return operationResult;
+        }
+        finally
+        {
+            if (_unitOfWork.HasActiveTransaction)
+            {
+                // SafeRollbackAsync will catch and "silence" exception if it was thrown when rolling back a transaction
                 await SafeRollbackAsync(cancellationToken);
             }
         }

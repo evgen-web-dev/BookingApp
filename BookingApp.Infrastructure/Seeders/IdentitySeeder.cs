@@ -12,14 +12,16 @@ public static class IdentitySeeder
         
         var roleManager = scope.ServiceProvider.GetRequiredService<IRoleIdentityService>();
 
-        if (!await roleManager.ExistsAsync(Roles.Host))
+        foreach (var roleName in Roles.AllRoles)
         {
-            await roleManager.CreateAsync(Roles.Host);
-        }
-        
-        if (!await roleManager.ExistsAsync(Roles.Client))
-        {
-            await roleManager.CreateAsync(Roles.Client);
+            if (await roleManager.ExistsAsync(roleName)) 
+                continue;
+            
+            var seedRoleResult = await roleManager.CreateAsync(roleName);
+            if (!seedRoleResult.Succeeded)
+            {
+                throw new InvalidOperationException($"Failed to see a role: {roleName}: {string.Join(", ", seedRoleResult.Errors)}");
+            }
         }
     }
 }

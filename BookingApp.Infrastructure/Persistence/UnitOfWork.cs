@@ -53,6 +53,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
             throw new InvalidOperationException("Could not commit: transaction has not been started yet");
         }
         
+        await _dbContext.SaveChangesAsync(cancellationToken);
         await _dbContextTransaction.CommitAsync(cancellationToken);
         
         await DisposeDbContextTransaction();

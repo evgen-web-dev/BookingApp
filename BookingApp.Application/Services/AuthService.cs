@@ -1,6 +1,7 @@
 using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Auth;
 using BookingApp.Application.Errors;
+using BookingApp.Application.Exceptions.Auth;
 using BookingApp.Application.Interfaces;
 using BookingApp.Application.Options.Auth;
 using BookingApp.Domain.Entities;
@@ -19,6 +20,7 @@ public class AuthService : IAuthService
     private readonly ISessionRepository _sessionRepository;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly IRefreshTokenRevoker _refreshTokenRevoker;
     private readonly IOptions<UserSessionOptions> _userSessionOptions;
     
     public AuthService(
@@ -27,7 +29,8 @@ public class AuthService : IAuthService
         IAccessTokenService accessTokenService, 
         ISessionService sessionService, 
         ISessionRepository sessionRepository, 
-        IRefreshTokenService refreshTokenService, 
+        IRefreshTokenService refreshTokenService,
+        IRefreshTokenRevoker refreshTokenRevoker,
         IRefreshTokenRepository refreshTokenRepository, 
         IOptions<UserSessionOptions> userSessionOptions)
     {
@@ -38,41 +41,8 @@ public class AuthService : IAuthService
         _sessionRepository = sessionRepository;
         _refreshTokenService = refreshTokenService;
         _refreshTokenRepository = refreshTokenRepository;
+        _refreshTokenRevoker = refreshTokenRevoker;
         _userSessionOptions = userSessionOptions;
-    }
-    
-    private async Task SafeRollbackAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _unitOfWork.RollbackAsync(cancellationToken);
-        }
-        catch (Exception e)
-        {
-            // TODO: add ILogger _logger logging for storing info about exception thrown during _unitOfWork.RollbackAsync(cancellationToken) 
-            Console.WriteLine(e);
-        }
-    }
-
-    private void ThrowOnRefreshTokenHashInvalidGeneration()
-    {
-        throw new InvalidOperationException("Could not generate hash for refresh token");    
-    }
-
-    private async Task<RevokeOutcome> RevokeRefreshTokenAndDetectReuse(RefreshToken refreshToken)
-    {
-        var currentRefreshTokenRevocationResult = await _refreshTokenRepository.Revoke(refreshToken.Id);
-        if (currentRefreshTokenRevocationResult is RevokeOutcome.IsAlreadyRevoked)
-        {
-            HandleRefreshTokenReuse();
-        }
-        
-        return currentRefreshTokenRevocationResult;
-    }
-
-    private void HandleRefreshTokenReuse()
-    {
-        // TODO: complete "force-user-password-change" flow on token-reuse detect
     }
     
     public async Task<OperationResult<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -136,7 +106,7 @@ public class AuthService : IAuthService
         var newRawRefreshToken = _refreshTokenService.GenerateRefreshToken();
         if (!_refreshTokenService.TryHashRefreshToken(newRawRefreshToken, out var newRefreshTokenHash))
         {
-            ThrowOnRefreshTokenHashInvalidGeneration();
+            throw new InvalidRefreshTokenHashGenerationException();
         }
         
         var newRefreshTokenObj = new RefreshToken
@@ -201,7 +171,7 @@ public class AuthService : IAuthService
                 return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
             }
 
-            var currentRefreshTokenRevocationResult = await RevokeRefreshTokenAndDetectReuse(currentRefreshTokenObj);
+            var currentRefreshTokenRevocationResult = await _refreshTokenRevoker.RevokeAsync(currentRefreshTokenObj.Id);
 
             if (currentRefreshTokenRevocationResult is RevokeOutcome.IsAlreadyRevoked)
             {
@@ -214,7 +184,7 @@ public class AuthService : IAuthService
             var newRawRefreshToken = _refreshTokenService.GenerateRefreshToken();
             if (!_refreshTokenService.TryHashRefreshToken(newRawRefreshToken, out var newRefreshTokenHash))
             {
-                ThrowOnRefreshTokenHashInvalidGeneration();
+                throw new InvalidRefreshTokenHashGenerationException();
             }
 
             _refreshTokenRepository.Add(new RefreshToken
@@ -267,7 +237,7 @@ public class AuthService : IAuthService
 
         try
         {
-            var currentRefreshTokenRevocationOutcome = await RevokeRefreshTokenAndDetectReuse(currentRefreshTokenObj);
+            var currentRefreshTokenRevocationOutcome = await _refreshTokenRevoker.RevokeAsync(currentRefreshTokenObj.Id);
 
             var sessionRevocationReason = currentRefreshTokenRevocationOutcome is RevokeOutcome.IsAlreadyRevoked
                 ? RevocationReason.TheftDetected
@@ -292,6 +262,19 @@ public class AuthService : IAuthService
             }
             
             throw;
+        }
+    }
+    
+    private async Task SafeRollbackAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _unitOfWork.RollbackAsync(cancellationToken);
+        }
+        catch (Exception e)
+        {
+            // TODO: add ILogger _logger logging for storing info about exception thrown during _unitOfWork.RollbackAsync(cancellationToken) 
+            Console.WriteLine(e);
         }
     }
 }

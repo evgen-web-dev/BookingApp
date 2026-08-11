@@ -33,6 +33,8 @@ public static class DependencyInjectionExtensions
     public static void AddApplicationServices(this IServiceCollection services)
     {
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IRefreshTokenRevoker, RefreshTokenRevoker>();
+        services.AddScoped<IRefreshTokenReuseHandler, RefreshTokenReuseHandler>();
     }
     
     public static void AddUserSessionsOptions(this IServiceCollection services, IConfiguration configuration)

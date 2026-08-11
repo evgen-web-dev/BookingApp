@@ -18,7 +18,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         _dbContext.Set<RefreshToken>().Add(token);
     }
 
-    public async Task<RevokeOutcome> Revoke(int tokenId)
+    public async Task<int> Revoke(int tokenId)
     {
         /*
         This will be executed on the DB as
@@ -27,15 +27,11 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         was already revoked with using this method.
         So, as long as this can not happen during "normal" conditions - we assume token-reuse for affectedRowsAmount = 0
         */
-        var affectedRowsAmount = await _dbContext.Set<RefreshToken>()
+        return await _dbContext.Set<RefreshToken>()
             .Where(token => 
                 token.Id == tokenId && token.RevokedAt == null)
             .ExecuteUpdateAsync(setters => 
                 setters.SetProperty(token => token.RevokedAt, DateTime.UtcNow));
-        
-        return affectedRowsAmount == 0
-            ? RevokeOutcome.IsAlreadyRevoked
-            : RevokeOutcome.RevokedSuccessfully;
     }
 
     public async Task<int> RevokeAllLiveForSession(int sessionId)

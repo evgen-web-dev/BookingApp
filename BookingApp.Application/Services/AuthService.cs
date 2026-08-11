@@ -85,13 +85,13 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<OperationResult<LoginResult>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
+    public async Task<OperationResult<IssuedTokens>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
         var authenticatedUserResult = await _userIdentityService.AuthenticateAsync(request.Email, request.Password);
 
         if (!authenticatedUserResult.Succeeded)
         {
-            return OperationResult<LoginResult>.Failure(authenticatedUserResult.Errors);
+            return OperationResult<IssuedTokens>.Failure(authenticatedUserResult.Errors);
         }
         
         var newSession = new Session
@@ -138,23 +138,21 @@ public class AuthService : IAuthService
         
         var accessToken = _accessTokenService.GenerateAccessToken(authenticatedUserResult.Value);
 
-        return OperationResult<LoginResult>.Success(
-            new LoginResult(newRawRefreshToken, new LoginResponse(accessToken))
-        );
+        return OperationResult<IssuedTokens>.Success(new IssuedTokens(newRawRefreshToken, accessToken));
     }
     
-    public async Task<OperationResult<RefreshResult>> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
+    public async Task<OperationResult<IssuedTokens>> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
     {
         if (!_refreshTokenService.TryHashRefreshToken(refreshToken, out var refreshTokenHash))
         {
-            return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
+            return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.InvalidRefreshToken]);
         }
         
         var currentRefreshTokenObj = await _refreshTokenRepository.FindByHashWithSessionWithoutTracking(refreshTokenHash);
 
         if (currentRefreshTokenObj is null)
         {
-            return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
+            return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.InvalidRefreshToken]);
         }
         
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
@@ -168,7 +166,7 @@ public class AuthService : IAuthService
                 await _sessionService.RevokeSession(currentRefreshTokenObj.SessionId, RevocationReason.Expired);
                 await _unitOfWork.CommitAsync(cancellationToken);
                 
-                return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
+                return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.InvalidRefreshToken]);
             }
 
             var currentRefreshTokenRevocationResult = await _refreshTokenRevoker.RevokeAsync(currentRefreshTokenObj.Id);
@@ -178,7 +176,7 @@ public class AuthService : IAuthService
                 await _sessionService.RevokeSession(currentRefreshTokenObj.SessionId, RevocationReason.TheftDetected);
                 await _unitOfWork.CommitAsync(cancellationToken);
                 
-                return OperationResult<RefreshResult>.Failure([AuthErrorCodes.InvalidRefreshToken]);
+                return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.InvalidRefreshToken]);
             }
 
             var newRawRefreshToken = _refreshTokenService.GenerateRefreshToken();
@@ -198,14 +196,14 @@ public class AuthService : IAuthService
             var currentUserDataResult = await _userIdentityService.GetWithRolesById(currentRefreshTokenObj.Session.UserId);
             if (!currentUserDataResult.Succeeded)
             {
-                return OperationResult<RefreshResult>.Failure([AuthErrorCodes.ErrorDuringTokenRefresh]);
+                return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.ErrorDuringTokenRefresh]);
             }
 
             var newAccessToken = _accessTokenService.GenerateAccessToken(currentUserDataResult.Value);
 
             await _unitOfWork.CommitAsync(cancellationToken);
             
-            return OperationResult<RefreshResult>.Success(new RefreshResult(newRawRefreshToken, new RefreshResponse(newAccessToken)));
+            return OperationResult<IssuedTokens>.Success(new IssuedTokens(newRawRefreshToken, newAccessToken));
         }
         catch
         {

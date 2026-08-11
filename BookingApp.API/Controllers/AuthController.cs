@@ -58,43 +58,38 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
-        var loginResult = await _authService.LoginAsync(request);
+        var loginIssuedTokensResult = await _authService.LoginAsync(request);
 
-        if (!loginResult.Succeeded)
+        if (!loginIssuedTokensResult.Succeeded)
         {
-            return BadRequest(new ErrorResponse(loginResult.Errors.ToList()));
+            return BadRequest(new ErrorResponse(loginIssuedTokensResult.Errors.ToList()));
         }
 
-        AppendRefreshTokenCookie(loginResult.Value.RefreshToken, _userSessionOptions.Value.AbsoluteLifeTimeDays);
+        AppendRefreshTokenCookie(loginIssuedTokensResult.Value.RefreshToken, _userSessionOptions.Value.AbsoluteLifeTimeDays);
         
-        return Ok(loginResult.Value.LoginResponse);
+        return Ok(new LoginResponse(loginIssuedTokensResult.Value.AccessToken));
     }
-
-    // TODO - remove after authorization is fully completed (access-tokens + refresh-tokens)
-    [HttpGet("test/protected")]
-    [Authorize(Roles = Roles.Client)]
-    public IActionResult TestProtected() => Ok("Access allowed");
 
     [HttpPost("refresh")]
     public async Task<ActionResult<RefreshResponse>> RefreshAsync(CancellationToken cancellationToken)
     {
-        var refreshToken = Request.Cookies[RefreshTokenCookieName] ?? null;
+        var refreshToken = Request.Cookies[RefreshTokenCookieName];
 
-        if (refreshToken is null)
+        if (string.IsNullOrEmpty(refreshToken))
         {
             return BadRequest(new ErrorResponse([AuthErrorCodes.InvalidRefreshToken]));
         }
         
-        var refreshResult = await _authService.RefreshAsync(refreshToken, cancellationToken);
+        var issuedTokensResult = await _authService.RefreshAsync(refreshToken, cancellationToken);
 
-        if (!refreshResult.Succeeded)
+        if (!issuedTokensResult.Succeeded)
         {
-            return BadRequest(new ErrorResponse(refreshResult.Errors.ToList()));
+            return BadRequest(new ErrorResponse(issuedTokensResult.Errors.ToList()));
         }
         
-        AppendRefreshTokenCookie(refreshResult.Value.RefreshToken, _userSessionOptions.Value.AbsoluteLifeTimeDays);
+        AppendRefreshTokenCookie(issuedTokensResult.Value.RefreshToken, _userSessionOptions.Value.AbsoluteLifeTimeDays);
         
-        return Ok(refreshResult.Value.RefreshResponse);
+        return Ok(new RefreshResponse(issuedTokensResult.Value.AccessToken));
     }
     
     [HttpPost("logout")]

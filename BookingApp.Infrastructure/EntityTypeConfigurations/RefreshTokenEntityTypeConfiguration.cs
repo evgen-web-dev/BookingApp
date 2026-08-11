@@ -12,9 +12,9 @@ public class RefreshTokenEntityTypeConfiguration : IEntityTypeConfiguration<Refr
         
         builder.HasKey(token => token.Id);
         
-        builder.HasOne<Session>(token => token.Session)
-            .WithMany(session => session.RefreshTokens)
-            .HasForeignKey(token => token.SessionId)
+        builder.HasOne<TokenFamily>(token => token.TokenFamily)
+            .WithMany(tokenFamily => tokenFamily.RefreshTokens)
+            .HasForeignKey(token => token.TokenFamilyId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(token => token.TokenHash)
@@ -32,7 +32,7 @@ public class RefreshTokenEntityTypeConfiguration : IEntityTypeConfiguration<Refr
         builder.Property(token => token.RevokedAt)
             .HasColumnType("timestamp with time zone");
         
-        builder.HasIndex(refreshToken => refreshToken.SessionId)
+        builder.HasIndex(refreshToken => refreshToken.TokenFamilyId)
             .IsUnique()
             .HasFilter("\"RevokedAt\" IS NULL");
     }

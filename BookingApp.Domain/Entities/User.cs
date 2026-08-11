@@ -8,5 +8,5 @@ public class User : IdentityUser<int>
     public string? MiddleName { get; set; }
     public required string LastName { get; set; }
     public required DateOnly DateOfBirth { get; set; }
-    public List<Session> Sessions { get; set; } = [];
+    public List<TokenFamily> TokenFamilies { get; set; } = [];
 }

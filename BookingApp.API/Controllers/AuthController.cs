@@ -14,14 +14,14 @@ namespace BookingApp.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
-    private readonly IOptions<UserSessionOptions> _userSessionOptions;
+    private readonly IOptions<TokenFamilyOptions> _tokenFamilyOptions;
     private const string RefreshTokenCookieName = "refreshToken";
     private const string RefreshTokenCookiePath = "/api/auth";
     
-    public AuthController(IAuthService authService, IOptions<UserSessionOptions> userSessionOptions)
+    public AuthController(IAuthService authService, IOptions<TokenFamilyOptions> tokenFamilyOptions)
     {
         _authService = authService;
-        _userSessionOptions = userSessionOptions;
+        _tokenFamilyOptions = tokenFamilyOptions;
     }
 
     private void AppendRefreshTokenCookie(string refreshToken, int maxAgeDays)
@@ -65,7 +65,7 @@ public class AuthController : ControllerBase
             return BadRequest(new ErrorResponse(loginIssuedTokensResult.Errors.ToList()));
         }
 
-        AppendRefreshTokenCookie(loginIssuedTokensResult.Value.RefreshToken, _userSessionOptions.Value.AbsoluteLifeTimeDays);
+        AppendRefreshTokenCookie(loginIssuedTokensResult.Value.RefreshToken, _tokenFamilyOptions.Value.TokenFamilyAbsoluteLifeTimeDays);
         
         return Ok(new LoginResponse(loginIssuedTokensResult.Value.AccessToken));
     }
@@ -87,7 +87,7 @@ public class AuthController : ControllerBase
             return BadRequest(new ErrorResponse(issuedTokensResult.Errors.ToList()));
         }
         
-        AppendRefreshTokenCookie(issuedTokensResult.Value.RefreshToken, _userSessionOptions.Value.AbsoluteLifeTimeDays);
+        AppendRefreshTokenCookie(issuedTokensResult.Value.RefreshToken, _tokenFamilyOptions.Value.TokenFamilyAbsoluteLifeTimeDays);
         
         return Ok(new RefreshResponse(issuedTokensResult.Value.AccessToken));
     }

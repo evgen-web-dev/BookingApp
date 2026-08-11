@@ -1,6 +1,6 @@
 namespace BookingApp.Domain.Entities;
 
-public class Session
+public class TokenFamily
 {
     public int Id { get; set; }
     public int UserId { get; set; }

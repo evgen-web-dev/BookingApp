@@ -37,14 +37,14 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IRefreshTokenReuseHandler, RefreshTokenReuseHandler>();
     }
     
-    public static void AddUserSessionsOptions(this IServiceCollection services, IConfiguration configuration)
+    public static void AddTokenFamilyOptions(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<UserSessionOptions>()
-            .Bind(configuration.GetSection(UserSessionOptions.SectionName))
-            .Validate(options => options.AbsoluteLifeTimeDays > 0, 
-                $"{UserSessionOptions.SectionName}:{nameof(UserSessionOptions.AbsoluteLifeTimeDays)} has invalid value")
+        services.AddOptions<TokenFamilyOptions>()
+            .Bind(configuration.GetSection(TokenFamilyOptions.SectionName))
+            .Validate(options => options.TokenFamilyAbsoluteLifeTimeDays > 0, 
+                $"{TokenFamilyOptions.SectionName}:{nameof(TokenFamilyOptions.TokenFamilyAbsoluteLifeTimeDays)} has invalid value")
             .Validate(options => options.RefreshTokenLifeTimeDays > 0, 
-                $"{UserSessionOptions.SectionName}:{nameof(UserSessionOptions.RefreshTokenLifeTimeDays)} has invalid value")
+                $"{TokenFamilyOptions.SectionName}:{nameof(TokenFamilyOptions.RefreshTokenLifeTimeDays)} has invalid value")
             .ValidateOnStart();
     }
 }

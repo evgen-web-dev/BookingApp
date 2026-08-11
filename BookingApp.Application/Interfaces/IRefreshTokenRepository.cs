@@ -6,6 +6,6 @@ public interface IRefreshTokenRepository
 {
     void Add(RefreshToken token);
     Task<int> Revoke(int tokenId);
-    Task<int> RevokeAllLiveForSession(int sessionId);
-    Task<RefreshToken?> FindByHashWithSessionWithoutTracking(string tokenHash);
+    Task<int> RevokeAllLiveForTokenFamily(int tokenFamilyId);
+    Task<RefreshToken?> FindByHashWithTokenFamilyWithoutTracking(string tokenHash);
 }

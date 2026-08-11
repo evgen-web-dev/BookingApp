@@ -15,7 +15,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddApplicationMapping();
 builder.Services.AddApplicationServices();
-builder.Services.AddUserSessionsOptions(builder.Configuration);
+builder.Services.AddTokenFamilyOptions(builder.Configuration);
 
 builder.Services.AddInfrastructureServices();
 builder.Services.AddInfrastructurePersistence(builder.Configuration);

@@ -16,33 +16,33 @@ public class AuthService : IAuthService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserIdentityService _userIdentityService;
     private readonly IAccessTokenService _accessTokenService;
-    private readonly ISessionService _sessionService;
-    private readonly ISessionRepository _sessionRepository;
+    private readonly ITokenFamilyService _tokenFamilyService;
+    private readonly ITokenFamilyRepository _tokenFamilyRepository;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IRefreshTokenRevoker _refreshTokenRevoker;
-    private readonly IOptions<UserSessionOptions> _userSessionOptions;
+    private readonly IOptions<TokenFamilyOptions> _tokenFamilyOptions;
     
     public AuthService(
         IUnitOfWork unitOfWork, 
         IUserIdentityService userIdentityService, 
         IAccessTokenService accessTokenService, 
-        ISessionService sessionService, 
-        ISessionRepository sessionRepository, 
+        ITokenFamilyService tokenFamilyService, 
+        ITokenFamilyRepository tokenFamilyRepository, 
         IRefreshTokenService refreshTokenService,
         IRefreshTokenRevoker refreshTokenRevoker,
         IRefreshTokenRepository refreshTokenRepository, 
-        IOptions<UserSessionOptions> userSessionOptions)
+        IOptions<TokenFamilyOptions> tokenFamilyOptions)
     {
         _unitOfWork = unitOfWork;
         _userIdentityService = userIdentityService;
         _accessTokenService = accessTokenService;
-        _sessionService = sessionService;
-        _sessionRepository = sessionRepository;
+        _tokenFamilyService = tokenFamilyService;
+        _tokenFamilyRepository = tokenFamilyRepository;
         _refreshTokenService = refreshTokenService;
         _refreshTokenRepository = refreshTokenRepository;
         _refreshTokenRevoker = refreshTokenRevoker;
-        _userSessionOptions = userSessionOptions;
+        _tokenFamilyOptions = tokenFamilyOptions;
     }
     
     public async Task<OperationResult<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -94,14 +94,14 @@ public class AuthService : IAuthService
             return OperationResult<IssuedTokens>.Failure(authenticatedUserResult.Errors);
         }
         
-        var newSession = new Session
+        var newTokenFamily = new TokenFamily
         {
             UserId = authenticatedUserResult.Value.Id,
-            AbsoluteExpiresAt = DateTime.UtcNow.AddDays(_userSessionOptions.Value.AbsoluteLifeTimeDays),
+            AbsoluteExpiresAt = DateTime.UtcNow.AddDays(_tokenFamilyOptions.Value.TokenFamilyAbsoluteLifeTimeDays),
             CreatedAt = DateTime.UtcNow
         };
         
-        _sessionRepository.Add(newSession);
+        _tokenFamilyRepository.Add(newTokenFamily);
         
         var newRawRefreshToken = _refreshTokenService.GenerateRefreshToken();
         if (!_refreshTokenService.TryHashRefreshToken(newRawRefreshToken, out var newRefreshTokenHash))
@@ -112,9 +112,9 @@ public class AuthService : IAuthService
         var newRefreshTokenObj = new RefreshToken
         {
             CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(_userSessionOptions.Value.RefreshTokenLifeTimeDays),
+            ExpiresAt = DateTime.UtcNow.AddDays(_tokenFamilyOptions.Value.RefreshTokenLifeTimeDays),
             TokenHash = newRefreshTokenHash,
-            Session =  newSession
+            TokenFamily =  newTokenFamily
         };
         
         _refreshTokenRepository.Add(newRefreshTokenObj);
@@ -148,7 +148,7 @@ public class AuthService : IAuthService
             return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.InvalidRefreshToken]);
         }
         
-        var currentRefreshTokenObj = await _refreshTokenRepository.FindByHashWithSessionWithoutTracking(refreshTokenHash);
+        var currentRefreshTokenObj = await _refreshTokenRepository.FindByHashWithTokenFamilyWithoutTracking(refreshTokenHash);
 
         if (currentRefreshTokenObj is null)
         {
@@ -157,13 +157,13 @@ public class AuthService : IAuthService
         
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         
-        var isSessionExpired = currentRefreshTokenObj.ExpiresAt < DateTime.UtcNow || currentRefreshTokenObj.Session.AbsoluteExpiresAt < DateTime.UtcNow;
+        var isTokenFamilyExpired = currentRefreshTokenObj.ExpiresAt < DateTime.UtcNow || currentRefreshTokenObj.TokenFamily.AbsoluteExpiresAt < DateTime.UtcNow;
 
         try
         {
-            if (isSessionExpired)
+            if (isTokenFamilyExpired)
             {
-                await _sessionService.RevokeSession(currentRefreshTokenObj.SessionId, RevocationReason.Expired);
+                await _tokenFamilyService.RevokeTokenFamily(currentRefreshTokenObj.TokenFamilyId, RevocationReason.Expired);
                 await _unitOfWork.CommitAsync(cancellationToken);
                 
                 return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.InvalidRefreshToken]);
@@ -173,7 +173,7 @@ public class AuthService : IAuthService
 
             if (currentRefreshTokenRevocationResult is RevokeOutcome.IsAlreadyRevoked)
             {
-                await _sessionService.RevokeSession(currentRefreshTokenObj.SessionId, RevocationReason.TheftDetected);
+                await _tokenFamilyService.RevokeTokenFamily(currentRefreshTokenObj.TokenFamilyId, RevocationReason.TheftDetected);
                 await _unitOfWork.CommitAsync(cancellationToken);
                 
                 return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.InvalidRefreshToken]);
@@ -187,13 +187,13 @@ public class AuthService : IAuthService
 
             _refreshTokenRepository.Add(new RefreshToken
             {
-                SessionId = currentRefreshTokenObj.SessionId,
+                TokenFamilyId = currentRefreshTokenObj.TokenFamilyId,
                 CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(_userSessionOptions.Value.RefreshTokenLifeTimeDays),
+                ExpiresAt = DateTime.UtcNow.AddDays(_tokenFamilyOptions.Value.RefreshTokenLifeTimeDays),
                 TokenHash = newRefreshTokenHash,
             });
 
-            var currentUserDataResult = await _userIdentityService.GetWithRolesById(currentRefreshTokenObj.Session.UserId);
+            var currentUserDataResult = await _userIdentityService.GetWithRolesById(currentRefreshTokenObj.TokenFamily.UserId);
             if (!currentUserDataResult.Succeeded)
             {
                 return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.ErrorDuringTokenRefresh]);
@@ -224,7 +224,7 @@ public class AuthService : IAuthService
             return OperationResult.Failure([AuthErrorCodes.InvalidRefreshToken]);
         }
 
-        var currentRefreshTokenObj = await _refreshTokenRepository.FindByHashWithSessionWithoutTracking(currentRefreshTokenHash);
+        var currentRefreshTokenObj = await _refreshTokenRepository.FindByHashWithTokenFamilyWithoutTracking(currentRefreshTokenHash);
 
         if (currentRefreshTokenObj is null)
         {
@@ -237,7 +237,7 @@ public class AuthService : IAuthService
         {
             var currentRefreshTokenRevocationOutcome = await _refreshTokenRevoker.RevokeAsync(currentRefreshTokenObj.Id);
 
-            var sessionRevocationReason = currentRefreshTokenRevocationOutcome is RevokeOutcome.IsAlreadyRevoked
+            var tokenFamilyRevocationReason = currentRefreshTokenRevocationOutcome is RevokeOutcome.IsAlreadyRevoked
                 ? RevocationReason.TheftDetected
                 : RevocationReason.Logout;
 
@@ -245,7 +245,7 @@ public class AuthService : IAuthService
                 ? OperationResult.Failure([AuthErrorCodes.InvalidRefreshToken])
                 : OperationResult.Success();
 
-            await _sessionService.RevokeSession(currentRefreshTokenObj.SessionId, sessionRevocationReason);
+            await _tokenFamilyService.RevokeTokenFamily(currentRefreshTokenObj.TokenFamilyId, tokenFamilyRevocationReason);
 
             await _unitOfWork.CommitAsync(cancellationToken);
 

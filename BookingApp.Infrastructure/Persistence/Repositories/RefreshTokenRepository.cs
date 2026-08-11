@@ -34,23 +34,23 @@ public class RefreshTokenRepository : IRefreshTokenRepository
                 setters.SetProperty(token => token.RevokedAt, DateTime.UtcNow));
     }
 
-    public async Task<int> RevokeAllLiveForSession(int sessionId)
+    public async Task<int> RevokeAllLiveForTokenFamily(int tokenFamilyId)
     {
         return await _dbContext.Set<RefreshToken>()
             .Where(token => 
-                token.RevokedAt == null && token.SessionId == sessionId)
+                token.RevokedAt == null && token.TokenFamilyId == tokenFamilyId)
             .ExecuteUpdateAsync(setters => 
                 setters.SetProperty(token => token.RevokedAt, DateTime.UtcNow));
     }
 
-    public async Task<RefreshToken?> FindByHashWithSessionWithoutTracking(string tokenHash)
+    public async Task<RefreshToken?> FindByHashWithTokenFamilyWithoutTracking(string tokenHash)
     {
         return await _dbContext.Set<RefreshToken>()
             .AsNoTracking()
             .Where(token => 
                 token.TokenHash == tokenHash)
             .Include(token => 
-                token.Session)
+                token.TokenFamily)
             .FirstOrDefaultAsync();
     }
 }

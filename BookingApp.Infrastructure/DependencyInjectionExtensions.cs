@@ -19,7 +19,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IRoleIdentityService, RoleIdentityService>();
         services.AddScoped<IAccessTokenService, JsonWebTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-        services.AddScoped<ISessionService, SessionService>();
+        services.AddScoped<ITokenFamilyService, TokenFamilyService>();
     }
     
     public static void AddInfrastructurePersistence(this IServiceCollection services, IConfiguration configuration)
@@ -33,6 +33,6 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-        services.AddScoped<ISessionRepository, SessionRepository>();
+        services.AddScoped<ITokenFamilyRepository, TokenFamilyRepository>();
     }
 }

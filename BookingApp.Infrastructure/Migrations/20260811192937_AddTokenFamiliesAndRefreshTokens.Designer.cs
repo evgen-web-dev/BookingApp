@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BookingApp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260804133724_AddSessionsAndRefreshTokens")]
-    partial class AddSessionsAndRefreshTokens
+    [Migration("20260811192937_AddTokenFamiliesAndRefreshTokens")]
+    partial class AddTokenFamiliesAndRefreshTokens
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -42,7 +42,7 @@ namespace BookingApp.Infrastructure.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("SessionId")
+                    b.Property<int>("TokenFamilyId")
                         .HasColumnType("integer");
 
                     b.Property<string>("TokenHash")
@@ -52,7 +52,7 @@ namespace BookingApp.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SessionId")
+                    b.HasIndex("TokenFamilyId")
                         .IsUnique()
                         .HasFilter("\"RevokedAt\" IS NULL");
 
@@ -62,7 +62,7 @@ namespace BookingApp.Infrastructure.Migrations
                     b.ToTable("RefreshTokens", (string)null);
                 });
 
-            modelBuilder.Entity("BookingApp.Domain.Entities.Session", b =>
+            modelBuilder.Entity("BookingApp.Domain.Entities.TokenFamily", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -90,7 +90,7 @@ namespace BookingApp.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Sessions", (string)null);
+                    b.ToTable("TokenFamilies", (string)null);
                 });
 
             modelBuilder.Entity("BookingApp.Domain.Entities.User", b =>
@@ -308,19 +308,19 @@ namespace BookingApp.Infrastructure.Migrations
 
             modelBuilder.Entity("BookingApp.Domain.Entities.RefreshToken", b =>
                 {
-                    b.HasOne("BookingApp.Domain.Entities.Session", "Session")
+                    b.HasOne("BookingApp.Domain.Entities.TokenFamily", "TokenFamily")
                         .WithMany("RefreshTokens")
-                        .HasForeignKey("SessionId")
+                        .HasForeignKey("TokenFamilyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Session");
+                    b.Navigation("TokenFamily");
                 });
 
-            modelBuilder.Entity("BookingApp.Domain.Entities.Session", b =>
+            modelBuilder.Entity("BookingApp.Domain.Entities.TokenFamily", b =>
                 {
                     b.HasOne("BookingApp.Domain.Entities.User", "User")
-                        .WithMany("Sessions")
+                        .WithMany("TokenFamilies")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -379,14 +379,14 @@ namespace BookingApp.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BookingApp.Domain.Entities.Session", b =>
+            modelBuilder.Entity("BookingApp.Domain.Entities.TokenFamily", b =>
                 {
                     b.Navigation("RefreshTokens");
                 });
 
             modelBuilder.Entity("BookingApp.Domain.Entities.User", b =>
                 {
-                    b.Navigation("Sessions");
+                    b.Navigation("TokenFamilies");
                 });
 #pragma warning restore 612, 618
         }

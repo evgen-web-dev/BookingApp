@@ -7,13 +7,13 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BookingApp.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSessionsAndRefreshTokens : Migration
+    public partial class AddTokenFamiliesAndRefreshTokens : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Sessions",
+                name: "TokenFamilies",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -26,9 +26,9 @@ namespace BookingApp.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Sessions", x => x.Id);
+                    table.PrimaryKey("PK_TokenFamilies", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Sessions_AspNetUsers_UserId",
+                        name: "FK_TokenFamilies_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -41,7 +41,7 @@ namespace BookingApp.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    SessionId = table.Column<int>(type: "integer", nullable: false),
+                    TokenFamilyId = table.Column<int>(type: "integer", nullable: false),
                     TokenHash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -51,17 +51,17 @@ namespace BookingApp.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_RefreshTokens", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_RefreshTokens_Sessions_SessionId",
-                        column: x => x.SessionId,
-                        principalTable: "Sessions",
+                        name: "FK_RefreshTokens_TokenFamilies_TokenFamilyId",
+                        column: x => x.TokenFamilyId,
+                        principalTable: "TokenFamilies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_RefreshTokens_SessionId",
+                name: "IX_RefreshTokens_TokenFamilyId",
                 table: "RefreshTokens",
-                column: "SessionId",
+                column: "TokenFamilyId",
                 unique: true,
                 filter: "\"RevokedAt\" IS NULL");
 
@@ -72,8 +72,8 @@ namespace BookingApp.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Sessions_UserId",
-                table: "Sessions",
+                name: "IX_TokenFamilies_UserId",
+                table: "TokenFamilies",
                 column: "UserId");
         }
 
@@ -84,7 +84,7 @@ namespace BookingApp.Infrastructure.Migrations
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
-                name: "Sessions");
+                name: "TokenFamilies");
         }
     }
 }

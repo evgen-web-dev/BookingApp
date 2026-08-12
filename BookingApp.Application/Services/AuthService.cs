@@ -94,36 +94,40 @@ public class AuthService : IAuthService
             return OperationResult<IssuedTokens>.Failure(authenticatedUserResult.Errors);
         }
         
-        var newTokenFamily = new TokenFamily
-        {
-            UserId = authenticatedUserResult.Value.Id,
-            AbsoluteExpiresAt = DateTime.UtcNow.AddDays(_tokenFamilyOptions.Value.TokenFamilyAbsoluteLifeTimeDays),
-            CreatedAt = DateTime.UtcNow
-        };
-        
-        _tokenFamilyRepository.Add(newTokenFamily);
-        
-        var newRawRefreshToken = _refreshTokenService.GenerateRefreshToken();
-        if (!_refreshTokenService.TryHashRefreshToken(newRawRefreshToken, out var newRefreshTokenHash))
-        {
-            throw new InvalidRefreshTokenHashGenerationException();
-        }
-        
-        var newRefreshTokenObj = new RefreshToken
-        {
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(_tokenFamilyOptions.Value.RefreshTokenLifeTimeDays),
-            TokenHash = newRefreshTokenHash,
-            TokenFamily =  newTokenFamily
-        };
-        
-        _refreshTokenRepository.Add(newRefreshTokenObj);
-        
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
+            var newTokenFamily = new TokenFamily
+            {
+                UserId = authenticatedUserResult.Value.Id,
+                AbsoluteExpiresAt = DateTime.UtcNow.AddDays(_tokenFamilyOptions.Value.TokenFamilyAbsoluteLifeTimeDays),
+                CreatedAt = DateTime.UtcNow
+            };
+        
+            _tokenFamilyRepository.Add(newTokenFamily);
+        
+            var newRawRefreshToken = _refreshTokenService.GenerateRefreshToken();
+            if (!_refreshTokenService.TryHashRefreshToken(newRawRefreshToken, out var newRefreshTokenHash))
+            {
+                throw new InvalidRefreshTokenHashGenerationException();
+            }
+        
+            var newRefreshTokenObj = new RefreshToken
+            {
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(_tokenFamilyOptions.Value.RefreshTokenLifeTimeDays),
+                TokenHash = newRefreshTokenHash,
+                TokenFamily =  newTokenFamily
+            };
+        
+            _refreshTokenRepository.Add(newRefreshTokenObj);
+            
             await _unitOfWork.CommitAsync(cancellationToken);
+            
+            var accessToken = _accessTokenService.GenerateAccessToken(authenticatedUserResult.Value);
+
+            return OperationResult<IssuedTokens>.Success(new IssuedTokens(newRawRefreshToken, accessToken));
         }
         catch
         {
@@ -135,10 +139,6 @@ public class AuthService : IAuthService
             
             throw;
         }
-        
-        var accessToken = _accessTokenService.GenerateAccessToken(authenticatedUserResult.Value);
-
-        return OperationResult<IssuedTokens>.Success(new IssuedTokens(newRawRefreshToken, accessToken));
     }
     
     public async Task<OperationResult<IssuedTokens>> RefreshAsync(string refreshToken, CancellationToken cancellationToken)

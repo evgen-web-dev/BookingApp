@@ -1,6 +1,7 @@
 using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Auth;
 using BookingApp.Application.Errors;
+using BookingApp.Application.Exceptions.User;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -10,7 +11,6 @@ namespace BookingApp.Infrastructure.Identity;
 public class UserIdentityService : IUserIdentityService
 {
     private readonly UserManager<User> _userManager;
-    private const string AuthenticatedUserAbsentEmailExceptionMessage = "Authenticated user has no email on record";
 
     public UserIdentityService(UserManager<User> userManager)
     {
@@ -58,7 +58,7 @@ public class UserIdentityService : IUserIdentityService
         return OperationResult<AuthenticatedUserResult>.Success(
             new AuthenticatedUserResult(
                 user.Id, 
-                user.Email ?? throw new InvalidOperationException(AuthenticatedUserAbsentEmailExceptionMessage), 
+                user.Email ?? throw new AuthenticatedUserHasNoEmailException(),
                 userRoles.ToList()
             )
         );
@@ -78,7 +78,7 @@ public class UserIdentityService : IUserIdentityService
         return OperationResult<AuthenticatedUserResult>.Success(
             new AuthenticatedUserResult(
                 user.Id, 
-                user.Email ?? throw new InvalidOperationException(AuthenticatedUserAbsentEmailExceptionMessage),
+                user.Email ?? throw new AuthenticatedUserHasNoEmailException(),
                 userRoles.ToList()
             )
         );

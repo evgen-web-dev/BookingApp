@@ -1,3 +1,4 @@
+using BookingApp.API.ExceptionHandlers;
 using BookingApp.Application.Options.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
@@ -45,5 +46,11 @@ public static class DependencyInjectionExtensions
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme);
+    }
+
+    public static void AddExceptionHandlers(this IServiceCollection services)
+    {
+        services.AddExceptionHandler<AppExceptionHandler>();
+        services.AddProblemDetails();
     }
 }

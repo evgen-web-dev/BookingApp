@@ -13,6 +13,8 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
 
+builder.Services.AddExceptionHandlers();
+
 builder.Services.AddApplicationMapping();
 builder.Services.AddApplicationServices();
 builder.Services.AddTokenFamilyOptions(builder.Configuration);
@@ -38,6 +40,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -101,11 +101,11 @@ public class AuthController : ControllerBase
         {
             return BadRequest(new ErrorResponse([AuthErrorCodes.InvalidRefreshToken]));
         }
-
-        DeleteRefreshTokenCookie();
         
         var logoutResult = await _authService.LogoutAsync(refreshToken, cancellationToken);
-
+        
+        DeleteRefreshTokenCookie();
+        
         if (!logoutResult.Succeeded)
         {
             return BadRequest(new ErrorResponse(logoutResult.Errors.ToList()));

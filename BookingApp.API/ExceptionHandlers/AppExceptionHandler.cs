@@ -8,16 +8,21 @@ namespace BookingApp.API.ExceptionHandlers;
 public class AppExceptionHandler : IExceptionHandler
 {
     private readonly IProblemDetailsService _problemDetailsService;
+    private readonly ILogger<AppExceptionHandler> _logger;
 
-    public AppExceptionHandler(IProblemDetailsService problemDetailsService)
+    public AppExceptionHandler(IProblemDetailsService problemDetailsService, ILogger<AppExceptionHandler> logger)
     {
         _problemDetailsService = problemDetailsService;
+        _logger = logger;
     }
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        // TODO: implement ILogger logging
-        Console.WriteLine(exception);
+        _logger.LogError(exception, 
+            "Unhandled exception for {Path} in {ClassName}.{MethodName}",
+            httpContext.Request.Path.Value, 
+            nameof(AppExceptionHandler), 
+            nameof(TryHandleAsync));
         
         var defaultErrorCode = GenericErrorCodes.UnexpectedError;
         var statusCode = ErrorStatusCodeMapper.GetStatusCodeForError(defaultErrorCode);
@@ -36,8 +41,13 @@ public class AppExceptionHandler : IExceptionHandler
         }
         catch (Exception writeException)
         {
-            // TODO: implement ILogger logging
-            Console.WriteLine(writeException);
+            _logger.LogError(
+                writeException, 
+                "Unhandled exception during write of problem details into HttpContext with {IProblemDetailsService} for {Path} in {ClassName}.{MethodName}", 
+                nameof(IProblemDetailsService),
+                httpContext.Request.Path.Value,
+                nameof(AppExceptionHandler),
+                nameof(TryHandleAsync));
 
             try
             {
@@ -49,8 +59,11 @@ public class AppExceptionHandler : IExceptionHandler
             }
             catch (Exception innerWriteException)
             {
-                // TODO: implement ILogger logging
-                Console.WriteLine(innerWriteException);
+                _logger.LogError(innerWriteException, 
+                    "Unhandled exception during write of problem details into HttpContext with \"httpContext.Response.WriteAsync\" for {Path} in {ClassName}.{MethodName}",
+                    httpContext.Request.Path.Value,
+                    nameof(AppExceptionHandler),
+                    nameof(TryHandleAsync));
             }
         }
         

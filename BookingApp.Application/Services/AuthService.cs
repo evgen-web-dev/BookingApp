@@ -7,6 +7,7 @@ using BookingApp.Application.Options.Auth;
 using BookingApp.Domain.Entities;
 using BookingApp.Domain;
 using Mapster;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace BookingApp.Application.Services;
@@ -22,6 +23,7 @@ public class AuthService : IAuthService
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IRefreshTokenRevoker _refreshTokenRevoker;
     private readonly IOptions<TokenFamilyOptions> _tokenFamilyOptions;
+    private readonly ILogger<AuthService> _logger;
     
     public AuthService(
         IUnitOfWork unitOfWork, 
@@ -32,7 +34,8 @@ public class AuthService : IAuthService
         IRefreshTokenService refreshTokenService,
         IRefreshTokenRevoker refreshTokenRevoker,
         IRefreshTokenRepository refreshTokenRepository, 
-        IOptions<TokenFamilyOptions> tokenFamilyOptions)
+        IOptions<TokenFamilyOptions> tokenFamilyOptions,
+        ILogger<AuthService> logger)
     {
         _unitOfWork = unitOfWork;
         _userIdentityService = userIdentityService;
@@ -43,6 +46,7 @@ public class AuthService : IAuthService
         _refreshTokenRepository = refreshTokenRepository;
         _refreshTokenRevoker = refreshTokenRevoker;
         _tokenFamilyOptions = tokenFamilyOptions;
+        _logger = logger;
     }
     
     public async Task<OperationResult<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -269,10 +273,11 @@ public class AuthService : IAuthService
         {
             await _unitOfWork.RollbackAsync(cancellationToken);
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            // TODO: add ILogger _logger logging for storing info about exception thrown during _unitOfWork.RollbackAsync(cancellationToken) 
-            Console.WriteLine(e);
+            _logger.LogError(exception, "Failed transaction rollback in {ClassName}.{Method}",
+                nameof(AuthService),
+                nameof(SafeRollbackAsync));
         }
     }
 }

@@ -13,7 +13,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
 
-builder.Services.AddExceptionHandlers();
+builder.Services.AddExceptionHandlersWithProblemDetails();
 
 builder.Services.AddApplicationMapping();
 builder.Services.AddApplicationServices();

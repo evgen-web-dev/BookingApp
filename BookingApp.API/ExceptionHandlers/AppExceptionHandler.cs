@@ -1,3 +1,4 @@
+using BookingApp.API.Errors;
 using BookingApp.Application.Errors;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +7,6 @@ namespace BookingApp.API.ExceptionHandlers;
 
 public class AppExceptionHandler : IExceptionHandler
 {
-    private const string ErrorsProblemDetailsExtensionKey = "errorCodes";
     private readonly IProblemDetailsService _problemDetailsService;
 
     public AppExceptionHandler(IProblemDetailsService problemDetailsService)
@@ -18,15 +18,16 @@ public class AppExceptionHandler : IExceptionHandler
     {
         // TODO: implement ILogger logging
         Console.WriteLine(exception);
-            
-        var problemDetails = new ProblemDetails
-        {
-            Type = "https://tools.ietf.org/html/rfc9110#section-15.6.1",
-            Status = StatusCodes.Status500InternalServerError,
-            Instance = httpContext.Request.Path.Value
-        };
-            
-        problemDetails.Extensions.Add(ErrorsProblemDetailsExtensionKey, new [] { GenericErrorCodes.UnexpectedError });
+        
+        var defaultErrorCode = GenericErrorCodes.UnexpectedError;
+        var statusCode = ErrorStatusCodeMapper.GetStatusCodeForError(defaultErrorCode);
+        
+        var problemDetails = ErrorCodesProblemDetailsFactory.Create(
+            ProblemDetailsTypeStatusCodeMapper.GetProblemDetailsTypeForStatusCode(statusCode),
+            statusCode,
+            [defaultErrorCode],
+            httpContext.Request.Path.Value,
+            "An unexpected error occurred.");
 
         try
         {

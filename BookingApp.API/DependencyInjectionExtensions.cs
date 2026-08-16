@@ -1,6 +1,11 @@
+using BookingApp.API.Errors;
 using BookingApp.API.ExceptionHandlers;
+using BookingApp.Application.DTOs;
+using BookingApp.Application.Errors;
 using BookingApp.Application.Options.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -48,9 +53,27 @@ public static class DependencyInjectionExtensions
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme);
     }
 
-    public static void AddExceptionHandlers(this IServiceCollection services)
+    public static void AddExceptionHandlersWithProblemDetails(this IServiceCollection services)
     {
         services.AddExceptionHandler<AppExceptionHandler>();
         services.AddProblemDetails();
+    }
+
+    public static ActionResult ToProblemDetailsResult(this OperationResult result, string path, string? title = null)
+    {
+        string errorForDefiningStatusCode = result.Errors.Count > 0 
+            ? result.Errors[0]
+            : GenericErrorCodes.UnexpectedError;
+        int errorStatusCode = ErrorStatusCodeMapper.GetStatusCodeForError(errorForDefiningStatusCode, StatusCodes.Status400BadRequest);
+        string problemDetailsType = ProblemDetailsTypeStatusCodeMapper.GetProblemDetailsTypeForStatusCode(errorStatusCode);
+        
+        ProblemDetails problemDetails = ErrorCodesProblemDetailsFactory.Create(
+            problemDetailsType, 
+            errorStatusCode, 
+            result.Errors.Count > 0 ? result.Errors.ToList() : [errorForDefiningStatusCode],
+            path,
+            title);
+
+        return new ObjectResult(problemDetails);
     }
 }

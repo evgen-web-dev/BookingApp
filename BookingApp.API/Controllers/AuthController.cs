@@ -1,9 +1,8 @@
+using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Auth;
 using BookingApp.Application.Errors;
 using BookingApp.Application.Interfaces;
 using BookingApp.Application.Options.Auth;
-using BookingApp.Domain;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -45,14 +44,14 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
         var registerResult = await _authService.RegisterAsync(request, cancellationToken);
-
-        if (registerResult.Succeeded)
+        
+        if (!registerResult.Succeeded)
         {
-            // TODO - update later to CreatedAtAction / CreatedAtRoute - when implement UsersController
-            return Ok(registerResult.Value);
+            return registerResult.ToProblemDetailsResult(Request.Path);
         }
-
-        return BadRequest(new ErrorResponse(registerResult.Errors.ToList()));
+        
+        // TODO - update later to CreatedAtAction / CreatedAtRoute - when implement UsersController
+        return Ok(registerResult.Value);
     }
     
     [HttpPost("login")]
@@ -62,7 +61,7 @@ public class AuthController : ControllerBase
 
         if (!loginIssuedTokensResult.Succeeded)
         {
-            return BadRequest(new ErrorResponse(loginIssuedTokensResult.Errors.ToList()));
+            return loginIssuedTokensResult.ToProblemDetailsResult(Request.Path);
         }
 
         AppendRefreshTokenCookie(loginIssuedTokensResult.Value.RefreshToken, _tokenFamilyOptions.Value.TokenFamilyAbsoluteLifeTimeDays);
@@ -77,14 +76,14 @@ public class AuthController : ControllerBase
 
         if (string.IsNullOrEmpty(refreshToken))
         {
-            return BadRequest(new ErrorResponse([AuthErrorCodes.InvalidRefreshToken]));
+            return OperationResult.Failure([AuthErrorCodes.InvalidRefreshToken]).ToProblemDetailsResult(Request.Path);
         }
         
         var issuedTokensResult = await _authService.RefreshAsync(refreshToken, cancellationToken);
 
         if (!issuedTokensResult.Succeeded)
         {
-            return BadRequest(new ErrorResponse(issuedTokensResult.Errors.ToList()));
+            return issuedTokensResult.ToProblemDetailsResult(Request.Path);
         }
         
         AppendRefreshTokenCookie(issuedTokensResult.Value.RefreshToken, _tokenFamilyOptions.Value.TokenFamilyAbsoluteLifeTimeDays);
@@ -99,7 +98,7 @@ public class AuthController : ControllerBase
 
         if (refreshToken is null)
         {
-            return BadRequest(new ErrorResponse([AuthErrorCodes.InvalidRefreshToken]));
+            return OperationResult.Failure([AuthErrorCodes.InvalidRefreshToken]).ToProblemDetailsResult(Request.Path);
         }
         
         var logoutResult = await _authService.LogoutAsync(refreshToken, cancellationToken);
@@ -108,7 +107,7 @@ public class AuthController : ControllerBase
         
         if (!logoutResult.Succeeded)
         {
-            return BadRequest(new ErrorResponse(logoutResult.Errors.ToList()));
+            return logoutResult.ToProblemDetailsResult(Request.Path);
         }
         
         return Ok();

@@ -5,7 +5,6 @@ using BookingApp.Application.Exceptions.Auth;
 using BookingApp.Application.Interfaces;
 using BookingApp.Application.Options.Auth;
 using BookingApp.Domain.Entities;
-using BookingApp.Domain;
 using Mapster;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -51,11 +50,6 @@ public class AuthService : IAuthService
     
     public async Task<OperationResult<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
-        if (!Roles.RolesAvailableForPublicRegistration.Contains(request.Role))
-        {
-            return OperationResult<RegisterResponse>.Failure([AuthErrorCodes.CouldNotCreateAccount, AuthErrorCodes.InvalidRoleProvided]);
-        }
-
         User userFromMappedRequest = request.Adapt<User>();
         
         await _unitOfWork.BeginTransactionAsync(cancellationToken);

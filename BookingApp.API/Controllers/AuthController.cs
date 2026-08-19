@@ -55,9 +55,9 @@ public class AuthController : ControllerBase
     }
     
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
+    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        var loginIssuedTokensResult = await _authService.LoginAsync(request);
+        var loginIssuedTokensResult = await _authService.LoginAsync(request, cancellationToken);
 
         if (!loginIssuedTokensResult.Succeeded)
         {

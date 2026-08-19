@@ -11,7 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 
 
-builder.Services.AddControllers();
+builder.Services.AddControllers((options =>
+{
+    options.Filters.AddAppFilters();
+}));
 
 builder.Services.AddExceptionHandlersWithProblemDetails();
 
@@ -23,6 +26,8 @@ builder.Services.AddInfrastructureServices();
 builder.Services.AddInfrastructurePersistence(builder.Configuration);
 
 builder.Services.AddJwtAuthentication(builder.Configuration);
+
+builder.Services.AddAppValidation();
 
 var app = builder.Build();
 

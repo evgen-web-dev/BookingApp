@@ -1,11 +1,15 @@
+using System.Text.Json;
 using BookingApp.API.Errors;
 using BookingApp.API.ExceptionHandlers;
+using BookingApp.API.Filters;
 using BookingApp.Application.DTOs;
 using BookingApp.Application.Errors;
 using BookingApp.Application.Options.Auth;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -59,6 +63,30 @@ public static class DependencyInjectionExtensions
         services.AddProblemDetails();
     }
 
+    public static void AddAppValidation(this IServiceCollection services)
+    {
+        services.AddValidatorsFromAssembly(typeof(DependencyInjectionExtensions).Assembly);
+    }
+
+    public static void AddAppFilters(this FilterCollection filterCollection)
+    {
+        filterCollection.Add<AsyncValidationFilter>();
+    }
+
+    public static ValidationProblemDetails ToValidationProblemDetails(this ValidationResult result, 
+        string path, 
+        string? title = "One or more validation errors occurred.")
+    {
+        return new ValidationProblemDetails
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Type = ProblemDetailsTypeStatusCodeMapper.GetProblemDetailsTypeForStatusCode(StatusCodes.Status400BadRequest),
+            Errors = result.ToDictionary(),
+            Instance = path,
+            Title = title
+        };
+    }
+    
     public static ActionResult ToProblemDetailsResult(this OperationResult result, string path, string? title = null)
     {
         string errorForDefiningStatusCode = result.Errors.Count > 0 

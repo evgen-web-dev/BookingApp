@@ -24,9 +24,18 @@ public static class IdentityErrorCodesDefaultDenyMapper
         ["InvalidUserName"] = AuthErrorCodes.InvalidEmailOrUserName
     };
     
+    /*
+     Identity's UserManager.AddToRoleAsync does not just add user to a role (updates AspNetUserRoles table)
+     but also triggers update for user we passed into UserManager.AddToRoleAsync as argument,
+     hence - validation rules for user-name and email are being applied.
+     That's why error-codes related to user-name and email validation need to be mapped into _assignUserToRoleErrorCodesMap.
+    */
     private static readonly IReadOnlyDictionary<string, string?> _assignUserToRoleErrorCodesMap = new Dictionary<string, string?>
     {
-        ["UserAlreadyInRole"] = null
+        ["UserAlreadyInRole"] = null,
+        ["DuplicateUserName"] = AuthErrorCodes.InvalidEmailOrUserName,
+        ["DuplicateEmail"] = AuthErrorCodes.InvalidEmailOrUserName,
+        ["InvalidUserName"] = AuthErrorCodes.InvalidEmailOrUserName
     };
     
     private static readonly IReadOnlyDictionary<string, string?> _createRoleErrorCodesMap = new Dictionary<string, string?>

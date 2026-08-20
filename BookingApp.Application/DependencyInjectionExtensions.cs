@@ -35,6 +35,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IRefreshTokenRevoker, RefreshTokenRevoker>();
         services.AddScoped<IRefreshTokenReuseHandler, RefreshTokenReuseHandler>();
+        services.AddScoped<ITokenFamilyService, TokenFamilyService>();
     }
     
     public static void AddTokenFamilyOptions(this IServiceCollection services, IConfiguration configuration)

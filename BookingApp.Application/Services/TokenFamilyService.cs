@@ -1,7 +1,7 @@
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain.Entities;
 
-namespace BookingApp.Infrastructure.Services;
+namespace BookingApp.Application.Services;
 
 public class TokenFamilyService : ITokenFamilyService
 {

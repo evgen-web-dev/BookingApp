@@ -22,7 +22,8 @@ public class TokenFamilyRepository : ITokenFamilyRepository
     {
         await _dbContext.Set<TokenFamily>()
             .Where(tokenFamily =>
-                tokenFamily.Id == tokenFamilyId)
+                tokenFamily.Id == tokenFamilyId
+                && tokenFamily.RevokedAt == null)
             .ExecuteUpdateAsync(setters =>
                 {
                     setters.SetProperty(tokenFamily => tokenFamily.RevokedAt, DateTime.UtcNow);

@@ -83,6 +83,7 @@ public class AuthController : ControllerBase
 
         if (!issuedTokensResult.Succeeded)
         {
+            DeleteRefreshTokenCookie();
             return issuedTokensResult.ToProblemDetailsResult(Request.Path);
         }
         

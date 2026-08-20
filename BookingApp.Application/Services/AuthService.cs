@@ -194,7 +194,8 @@ public class AuthService : IAuthService
             var currentUserDataResult = await _userIdentityService.GetWithRolesById(currentRefreshTokenObj.TokenFamily.UserId);
             if (!currentUserDataResult.Succeeded)
             {
-                return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.ErrorDuringTokenRefresh]);
+                await SafeRollbackAsync(cancellationToken);
+                return OperationResult<IssuedTokens>.Failure([AuthErrorCodes.InvalidRefreshToken]);
             }
 
             var newAccessToken = _accessTokenService.GenerateAccessToken(currentUserDataResult.Value);

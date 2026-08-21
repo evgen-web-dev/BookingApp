@@ -20,7 +20,7 @@ public static class IdentitySeeder
             var seedRoleResult = await roleManager.CreateAsync(roleName);
             if (!seedRoleResult.Succeeded)
             {
-                throw new InvalidOperationException($"Failed to see a role: {roleName}: {string.Join(", ", seedRoleResult.Errors)}");
+                throw new InvalidOperationException($"Failed to seed a role: {roleName}: {string.Join(", ", seedRoleResult.Errors)}");
             }
         }
     }

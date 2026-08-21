@@ -13,15 +13,17 @@ namespace BookingApp.Infrastructure;
 
 public static class DependencyInjectionExtensions
 {
-    public static void AddInfrastructureServices(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IRoleIdentityService, RoleIdentityService>();
         services.AddScoped<IAccessTokenService, JsonWebTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        
+        return services;
     }
     
-    public static void AddInfrastructurePersistence(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructurePersistence(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
@@ -33,5 +35,7 @@ public static class DependencyInjectionExtensions
         
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<ITokenFamilyRepository, TokenFamilyRepository>();
+        
+        return services;
     }
 }

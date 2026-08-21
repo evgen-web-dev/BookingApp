@@ -12,7 +12,7 @@ namespace BookingApp.Application;
 
 public static class DependencyInjectionExtensions
 {
-    public static void AddApplicationMapping(this IServiceCollection services)
+    public static IServiceCollection AddApplicationMapping(this IServiceCollection services)
     {
         var config = new TypeAdapterConfig();
         
@@ -30,17 +30,21 @@ public static class DependencyInjectionExtensions
             .IgnoreNonMapped(true);
          
          services.AddSingleton<IMapper>(new Mapper(config));
+         
+         return services;
     }
 
-    public static void AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IRefreshTokenRevoker, RefreshTokenRevoker>();
         services.AddScoped<IRefreshTokenReuseHandler, RefreshTokenReuseHandler>();
         services.AddScoped<ITokenFamilyService, TokenFamilyService>();
+        
+        return services;
     }
     
-    public static void AddTokenFamilyOptions(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddTokenFamilyOptions(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<TokenFamilyOptions>()
             .Bind(configuration.GetSection(TokenFamilyOptions.SectionName))
@@ -49,5 +53,7 @@ public static class DependencyInjectionExtensions
             .Validate(options => options.RefreshTokenLifeTimeDays > 0, 
                 $"{TokenFamilyOptions.SectionName}:{nameof(TokenFamilyOptions.RefreshTokenLifeTimeDays)} has invalid value")
             .ValidateOnStart();
+        
+        return services;
     }
 }

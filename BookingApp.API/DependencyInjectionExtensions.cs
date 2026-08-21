@@ -17,7 +17,7 @@ namespace BookingApp.API;
 
 public static class DependencyInjectionExtensions
 {
-    public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
@@ -55,17 +55,22 @@ public static class DependencyInjectionExtensions
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme);
+        
+        return services;
     }
 
-    public static void AddExceptionHandlersWithProblemDetails(this IServiceCollection services)
+    public static IServiceCollection AddExceptionHandlersWithProblemDetails(this IServiceCollection services)
     {
         services.AddExceptionHandler<AppExceptionHandler>();
         services.AddProblemDetails();
+        
+        return services;
     }
 
-    public static void AddAppValidation(this IServiceCollection services)
+    public static IServiceCollection AddAppValidation(this IServiceCollection services)
     {
         services.AddValidatorsFromAssembly(typeof(DependencyInjectionExtensions).Assembly);
+        return services;
     }
 
     public static void AddAppFilters(this FilterCollection filterCollection)

@@ -4,6 +4,7 @@ using BookingApp.Application.Options.Auth;
 using BookingApp.Application.Services;
 using BookingApp.Domain.Entities;
 using Mapster;
+using MapsterMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,23 +12,24 @@ namespace BookingApp.Application;
 
 public static class DependencyInjectionExtensions
 {
-    public static void AddApplicationMapping(this IServiceCollection _)
+    public static void AddApplicationMapping(this IServiceCollection services)
     {
-        TypeAdapterConfig<RegisterRequest, User>
-            .NewConfig()
+        var config = new TypeAdapterConfig();
+        
+         config.NewConfig<RegisterRequest, User>()
             .Map(dest => dest.Email, src => src.Email)
             .Map(dest => dest.UserName, src => src.Email)
             .Map(dest => dest.FirstName, src => src.FirstName)
             .Map(dest => dest.LastName, src => src.LastName)
             .Map(dest => dest.MiddleName, src => src.MiddleName)
-            .Map(dest => dest.MiddleName, src => src.MiddleName)
             .Map(dest => dest.DateOfBirth, src => src.DateOfBirth)
             .IgnoreNonMapped(true);
         
-        TypeAdapterConfig<User, RegisterResponse>
-            .NewConfig()
+         config.NewConfig<User, RegisterResponse>()
             .Map(dest => dest.Id, src => src.Id)
             .IgnoreNonMapped(true);
+         
+         services.AddSingleton<IMapper>(new Mapper(config));
     }
 
     public static void AddApplicationServices(this IServiceCollection services)

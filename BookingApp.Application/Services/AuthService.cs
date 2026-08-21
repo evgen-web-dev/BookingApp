@@ -6,6 +6,7 @@ using BookingApp.Application.Interfaces;
 using BookingApp.Application.Options.Auth;
 using BookingApp.Domain.Entities;
 using Mapster;
+using MapsterMapper;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -15,6 +16,7 @@ public class AuthService : IAuthService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserIdentityService _userIdentityService;
+    private readonly IMapper _mapper;
     private readonly IAccessTokenService _accessTokenService;
     private readonly ITokenFamilyService _tokenFamilyService;
     private readonly ITokenFamilyRepository _tokenFamilyRepository;
@@ -27,6 +29,7 @@ public class AuthService : IAuthService
     public AuthService(
         IUnitOfWork unitOfWork, 
         IUserIdentityService userIdentityService, 
+        IMapper mapper,
         IAccessTokenService accessTokenService, 
         ITokenFamilyService tokenFamilyService, 
         ITokenFamilyRepository tokenFamilyRepository, 
@@ -38,6 +41,7 @@ public class AuthService : IAuthService
     {
         _unitOfWork = unitOfWork;
         _userIdentityService = userIdentityService;
+        _mapper = mapper;
         _accessTokenService = accessTokenService;
         _tokenFamilyService = tokenFamilyService;
         _tokenFamilyRepository = tokenFamilyRepository;
@@ -50,7 +54,7 @@ public class AuthService : IAuthService
     
     public async Task<OperationResult<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
-        User userFromMappedRequest = request.Adapt<User>();
+        User userFromMappedRequest = _mapper.Map<User>(request);
         
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         

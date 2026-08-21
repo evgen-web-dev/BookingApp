@@ -63,12 +63,14 @@ public class AuthService : IAuthService
             var createUserResult = await _userIdentityService.CreateAsync(userFromMappedRequest, request.Password);
             if (!createUserResult.Succeeded)
             {
+                await SafeRollbackAsync(cancellationToken);
                 return OperationResult<RegisterResponse>.Failure(createUserResult.Errors);
             }
 
             var assignUserToRole = await _userIdentityService.AddToRoleAsync(userFromMappedRequest, request.Role);
             if (!assignUserToRole.Succeeded)
             {
+                await SafeRollbackAsync(cancellationToken);
                 return OperationResult<RegisterResponse>.Failure(assignUserToRole.Errors);
             }
 

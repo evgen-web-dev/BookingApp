@@ -24,10 +24,6 @@ public static class DependencyInjectionExtensions
             .Map(dest => dest.MiddleName, src => src.MiddleName)
             .Map(dest => dest.DateOfBirth, src => src.DateOfBirth)
             .IgnoreNonMapped(true);
-        
-         config.NewConfig<User, RegisterResponse>()
-            .Map(dest => dest.Id, src => src.Id)
-            .IgnoreNonMapped(true);
          
          services.AddSingleton<IMapper>(new Mapper(config));
          

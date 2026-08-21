@@ -6,5 +6,4 @@ public static class AuthErrorCodes
     public const string InvalidEmailOrUserName = "InvalidEmailOrUserName";
     public const string UserNotFound = "UserNotFound";
     public const string InvalidRefreshToken = "InvalidRefreshToken";
-    public const string ErrorDuringTokenRefresh = "ErrorDuringTokenRefresh";
 }

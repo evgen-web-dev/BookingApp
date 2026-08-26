@@ -31,6 +31,13 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
       - "Jack:Jack"
       - etc
      */
+    
+    /*
+    TODO: confirm that allowing "." (dot) as a spec character inside of the name in NameCharactersRegExpPattern
+    is intentional and not a bug.
+    If the correctness of allowing "." (dot) as a spec character inside of the name in NameCharactersRegExpPattern
+    is confirmed - then remove "Jack.Jack" from "Strings this regexp will not accept" list.
+     */
     private const string NameCharactersRegExpPattern = @"^\p{L}[\p{L}'’ʼ`´.\-–—\s]*$";
     
     public RegisterRequestValidator()

@@ -92,6 +92,16 @@ public class RegisterRequestValidatorTests
         result.ShouldHaveValidationErrorFor(r => r.Password);
     }
     
+    [Fact]
+    public void Password_WhenValid_ShouldNotHaveValidatorError()
+    {
+        var registerRequest = BuildRegisterRequest(password: "Pa$$word1");
+        
+        var result = _validator.TestValidate(registerRequest);
+        
+        result.ShouldNotHaveValidationErrorFor(r => r.Password);
+    }
+    
     [Theory]
     [InlineData("")]
     [InlineData("  ")]

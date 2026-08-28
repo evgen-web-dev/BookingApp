@@ -46,14 +46,14 @@ public class AuthServiceTests
         mockedUserIdentityService.Setup(x => x.AddToRoleAsync(mockedUser, mockedRequest.Role))
             .ReturnsAsync(OperationResult.Success());
         
-        // mocking ILogger
-        var mockedLogger = new Mock<ILogger<AuthService>>(MockBehavior.Strict);
+        // not configuring mock for ILogger
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.RegisterAsync - test will throw anyway) 
         
         var authService = BuildAuthService(
             unitOfWork: mockedUnitOfWork.Object,
             userIdentityService: mockedUserIdentityService.Object,
-            mapper: mockedMapper.Object,
-            logger: mockedLogger.Object);
+            mapper: mockedMapper.Object);
 
         var registerResult = await authService.RegisterAsync(mockedRequest, CancellationToken.None);
         
@@ -100,19 +100,75 @@ public class AuthServiceTests
         // cause it is not expected to be called in the scope that this test covers
         // (if it will be called in real AuthService.RegisterAsync - test will throw anyway) 
         
-        // mocking ILogger
-        var mockedLogger = new Mock<ILogger<AuthService>>(MockBehavior.Strict);
+        // not configuring mock for ILogger
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.RegisterAsync - test will throw anyway) 
         
         var authService = BuildAuthService(
             unitOfWork: mockedUnitOfWork.Object,
             userIdentityService: mockedUserIdentityService.Object,
-            mapper: mockedMapper.Object,
-            logger: mockedLogger.Object);
+            mapper: mockedMapper.Object);
 
         var registerResult = await authService.RegisterAsync(mockedRequest, CancellationToken.None);
         
         registerResult.Succeeded.ShouldBeFalse();
         registerResult.Errors.ShouldBe([couldNotCreateUserErrorMessage]);
+        mockedUnitOfWork.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+    
+    [Fact]
+    public async Task AuthService_RegisterAsync_WhenUserIdentityServiceAddToRoleFails_ShouldNotCreateUser()
+    {
+        var mockedUser = BuildMockedUser();
+        var mockedRequest = BuildMockedRegisterRequest();
+        const string couldNotCreateUserWithoutARoleErrorMessage = "Could not create user without a role";
+        
+        // mocking UoW
+        var mockedUnitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        mockedUnitOfWork
+            .Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        
+        mockedUnitOfWork
+            .Setup(x => x.RollbackAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // not configuring mock for mockedUnitOfWork.CommitAsync and mockedUnitOfWork.HasActiveTransaction
+        // cause they are not expected to be called in the scope that this test covers
+        // (if either of them will be called/reached in real AuthService.RegisterAsync - test will throw anyway) 
+
+        // mocking Mapster mapper
+        var mockedMapper = new Mock<IMapper>(MockBehavior.Strict);
+        mockedMapper
+            .Setup(x => x.Map<User>(mockedRequest))
+            .Returns(mockedUser);
+        
+        // mocking IUserIdentityService
+        var mockedUserIdentityService = new Mock<IUserIdentityService>(MockBehavior.Strict);
+        mockedUserIdentityService
+            .Setup(x => x.CreateAsync(mockedUser, mockedRequest.Password))
+            .ReturnsAsync(OperationResult<CreateUserResult>.Success(new CreateUserResult(2)));
+        
+        mockedUserIdentityService.Setup(x => x.AddToRoleAsync(mockedUser, mockedRequest.Role))
+            .ReturnsAsync(OperationResult.Failure([couldNotCreateUserWithoutARoleErrorMessage]));
+        
+        // not configuring mock for ILogger
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.RegisterAsync - test will throw anyway) 
+        
+        var authService = BuildAuthService(
+            unitOfWork: mockedUnitOfWork.Object,
+            userIdentityService: mockedUserIdentityService.Object,
+            mapper: mockedMapper.Object);
+
+        var registerResult = await authService.RegisterAsync(mockedRequest, CancellationToken.None);
+        
+        registerResult.Succeeded.ShouldBeFalse();
+        registerResult.Errors.ShouldBe([couldNotCreateUserWithoutARoleErrorMessage]);
+        
+        mockedUserIdentityService.Verify(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Once);
+        mockedUserIdentityService.Verify(x => x.AddToRoleAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Once);
+        
         mockedUnitOfWork.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 

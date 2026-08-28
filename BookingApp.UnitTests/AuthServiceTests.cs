@@ -226,7 +226,7 @@ public class AuthServiceTests
         mockedUnitOfWork.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
     
-        [Fact]
+    [Fact]
     public async Task AuthService_RegisterAsync_WhenExceptionThrownWithinClosedTransactionInTryBlock_ShouldNotRollbackChanges()
     {
         var mockedUser = BuildMockedUser();
@@ -279,6 +279,94 @@ public class AuthServiceTests
         mockedUnitOfWork.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task AuthService_LoginAsync_WhenLoginRequestCredsAreCorrect_ShouldCreateRefreshTokenAndAccessToken()
+    {
+        var mockedLoginRequest = BuildMockedLoginRequest();
+        var mockedAuthenticatedUserResult = BuildMockedAuthenticatedUserResult(mockedLoginRequest.Email);
+        var mockedTokenFamilyOptions = Options.Create(new TokenFamilyOptions
+        {
+            RefreshTokenLifeTimeDays = 3,
+            TokenFamilyAbsoluteLifeTimeDays = 14,
+        });
+        const string mockedRefreshToken = "some-refresh-token";
+        var mockedRefreshTokenHash = "some-refresh-token-hash";
+        const string mockedAccessToken = "some-access-token";
+        
+        // mocking UserIdentityService
+        var mockedUserIdentityService = new Mock<IUserIdentityService>(MockBehavior.Strict);
+        mockedUserIdentityService
+            .Setup(x => x.AuthenticateAsync(mockedLoginRequest.Email, mockedLoginRequest.Password))
+            .ReturnsAsync(OperationResult<AuthenticatedUserResult>.Success(mockedAuthenticatedUserResult));
+        
+        // mocking UoW
+        var mockedUnitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        mockedUnitOfWork
+            .Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        
+        mockedUnitOfWork
+            .Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        
+        // mocking IRefreshTokenService
+        var mockedRefreshTokenService = new Mock<IRefreshTokenService>(MockBehavior.Strict);
+        mockedRefreshTokenService
+            .Setup(x => x.GenerateRefreshToken())
+            .Returns(mockedRefreshToken);
+        
+        mockedRefreshTokenService
+            .Setup(x => x.TryHashRefreshToken(mockedRefreshToken, out mockedRefreshTokenHash))
+            .Returns(true);
+        
+        // mocking IAccessTokenService
+        var mockedAccessTokenService = new Mock<IAccessTokenService>(MockBehavior.Strict);
+        mockedAccessTokenService
+            .Setup(x => x.GenerateAccessToken(mockedAuthenticatedUserResult))
+            .Returns(mockedAccessToken);
+        
+        // mocking IRefreshTokenRepository
+        var mockedRefreshTokenRepository = new Mock<IRefreshTokenRepository>(MockBehavior.Strict);
+        mockedRefreshTokenRepository
+            .Setup(x => x.Add(It.IsAny<RefreshToken>()));
+        
+        // mocking ITokenFamilyRepository
+        var mockedRefreshTokenFamilyRepository = new Mock<ITokenFamilyRepository>(MockBehavior.Strict);
+        mockedRefreshTokenFamilyRepository
+            .Setup(x => x.Add(It.IsAny<TokenFamily>()));
+
+        
+        // verifying results
+        var authService = BuildAuthService(
+            unitOfWork: mockedUnitOfWork.Object,
+            userIdentityService: mockedUserIdentityService.Object,
+            refreshTokenService: mockedRefreshTokenService.Object,
+            accessTokenService: mockedAccessTokenService.Object,
+            tokenFamilyOptions: mockedTokenFamilyOptions,
+            tokenFamilyRepository: mockedRefreshTokenFamilyRepository.Object,
+            refreshTokenRepository: mockedRefreshTokenRepository.Object);
+
+        var loginResult = await authService.LoginAsync(mockedLoginRequest, CancellationToken.None);
+
+        loginResult.Succeeded.ShouldBeTrue();
+        loginResult.Value.RefreshToken.ShouldBe(mockedRefreshToken);
+        loginResult.Value.AccessToken.ShouldBe(mockedAccessToken);
+        
+        mockedUserIdentityService.Verify(x => x.AuthenticateAsync(mockedLoginRequest.Email, mockedLoginRequest.Password), Times.Once);
+        
+        mockedUnitOfWork.Verify(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        
+        mockedRefreshTokenFamilyRepository.Verify(x => x.Add(It.IsAny<TokenFamily>()), Times.Once);
+        
+        mockedRefreshTokenService.Verify(x => x.GenerateRefreshToken(), Times.Once);
+        mockedRefreshTokenService.Verify(x => x.TryHashRefreshToken(mockedRefreshToken, out mockedRefreshTokenHash), Times.Once);
+        mockedRefreshTokenRepository.Verify(x => x.Add(It.IsAny<RefreshToken>()), Times.Once);
+        
+        mockedUnitOfWork.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        
+        mockedAccessTokenService.Verify(x => x.GenerateAccessToken(mockedAuthenticatedUserResult), Times.Once);
+    }
+    
     private static User BuildMockedUser()
     {
         return new User
@@ -299,6 +387,25 @@ public class AuthServiceTests
             Email = "test@example.com",
             Password = "Pa$$word1",
             Role = Roles.Client
+        };
+    }
+    
+    private static LoginRequest BuildMockedLoginRequest()
+    {
+        return new LoginRequest
+        {
+            Email = "test@example.com",
+            Password = "Pa$$word1",
+        };
+    }
+    
+    private static AuthenticatedUserResult BuildMockedAuthenticatedUserResult(string? email = "test@example.com")
+    {
+        return new AuthenticatedUserResult
+        {
+            Email =  email ?? "test@example.com",
+            Id = 2,
+            Roles = [Roles.Client]
         };
     }
     

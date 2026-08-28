@@ -56,11 +56,11 @@ public class UserIdentityService : IUserIdentityService
         var userRoles = await _userManager.GetRolesAsync(user);
         
         return OperationResult<AuthenticatedUserResult>.Success(
-            new AuthenticatedUserResult(
-                user.Id, 
-                user.Email ?? throw new AuthenticatedUserHasNoEmailException(),
-                userRoles.ToList()
-            )
+            new AuthenticatedUserResult{
+                Id = user.Id, 
+                Email = user.Email ?? throw new AuthenticatedUserHasNoEmailException(),
+                Roles = userRoles.ToList()
+            }
         );
     }
 
@@ -76,11 +76,11 @@ public class UserIdentityService : IUserIdentityService
         var userRoles = await _userManager.GetRolesAsync(user);
         
         return OperationResult<AuthenticatedUserResult>.Success(
-            new AuthenticatedUserResult(
-                user.Id, 
-                user.Email ?? throw new AuthenticatedUserHasNoEmailException(),
-                userRoles.ToList()
-            )
+            new AuthenticatedUserResult{
+                Id = user.Id, 
+                Email = user.Email ?? throw new AuthenticatedUserHasNoEmailException(),
+                Roles = userRoles.ToList()
+            }
         );
     }
 }

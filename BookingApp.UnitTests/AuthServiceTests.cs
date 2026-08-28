@@ -171,6 +171,113 @@ public class AuthServiceTests
         
         mockedUnitOfWork.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
+    
+    [Fact]
+    public async Task AuthService_RegisterAsync_WhenExceptionThrownWithinActiveTransactionInTryBlock_ShouldRollbackChanges()
+    {
+        var mockedUser = BuildMockedUser();
+        var mockedRequest = BuildMockedRegisterRequest();
+        var mockedCreateUserResult = new CreateUserResult(1);
+        const string addToRoleExceptionMessage = "Unexpected error occured during adding a role to a user";
+        
+        // mocking UoW
+        var mockedUnitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        mockedUnitOfWork.Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        
+        mockedUnitOfWork.Setup(x => x.RollbackAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        
+        mockedUnitOfWork.Setup(x => x.HasActiveTransaction)
+            .Returns(true);
+        
+        // not configuring mock for mockedUnitOfWork.CommitAsync
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.RegisterAsync - test will throw anyway) 
+
+        // mocking Mapster mapper
+        var mockedMapper = new Mock<IMapper>(MockBehavior.Strict);
+        mockedMapper.Setup(x => x.Map<User>(mockedRequest))
+            .Returns(mockedUser);
+        
+        // mocking IUserIdentityService
+        var mockedUserIdentityService = new Mock<IUserIdentityService>(MockBehavior.Strict);
+        mockedUserIdentityService.Setup(x => x.CreateAsync(mockedUser, mockedRequest.Password))
+            .ReturnsAsync(OperationResult<CreateUserResult>.Success(mockedCreateUserResult));
+        
+        mockedUserIdentityService.Setup(x => x.AddToRoleAsync(mockedUser, mockedRequest.Role))
+            .ThrowsAsync(new InvalidOperationException(addToRoleExceptionMessage));
+        
+        // not configuring mock for ILogger
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.RegisterAsync - test will throw anyway) 
+        
+        var authService = BuildAuthService(
+            unitOfWork: mockedUnitOfWork.Object,
+            userIdentityService: mockedUserIdentityService.Object,
+            mapper: mockedMapper.Object);
+        
+        var exception = await Should.ThrowAsync<InvalidOperationException>(
+            async () => await authService.RegisterAsync(mockedRequest, CancellationToken.None));
+        
+        exception.Message.ShouldBe(addToRoleExceptionMessage);
+        
+        mockedUnitOfWork.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockedUnitOfWork.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+    
+        [Fact]
+    public async Task AuthService_RegisterAsync_WhenExceptionThrownWithinClosedTransactionInTryBlock_ShouldNotRollbackChanges()
+    {
+        var mockedUser = BuildMockedUser();
+        var mockedRequest = BuildMockedRegisterRequest();
+        var mockedCreateUserResult = new CreateUserResult(1);
+        const string addToRoleExceptionMessage = "Unexpected error occured during adding a role to a user";
+        
+        // mocking UoW
+        var mockedUnitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        mockedUnitOfWork.Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        
+        mockedUnitOfWork.Setup(x => x.HasActiveTransaction)
+            .Returns(false);
+        
+        // not configuring mock for mockedUnitOfWork.CommitAsync and mockedUnitOfWork.RollbackAsync
+        // cause they are not expected to be called in the scope that this test covers
+        // (if either of them will be called in real AuthService.RegisterAsync - test will throw anyway) 
+
+        // mocking Mapster mapper
+        var mockedMapper = new Mock<IMapper>(MockBehavior.Strict);
+        mockedMapper.Setup(x => x.Map<User>(mockedRequest))
+            .Returns(mockedUser);
+        
+        // mocking IUserIdentityService
+        var mockedUserIdentityService = new Mock<IUserIdentityService>(MockBehavior.Strict);
+        mockedUserIdentityService.Setup(x => x.CreateAsync(mockedUser, mockedRequest.Password))
+            .ReturnsAsync(OperationResult<CreateUserResult>.Success(mockedCreateUserResult));
+        
+        mockedUserIdentityService.Setup(x => x.AddToRoleAsync(mockedUser, mockedRequest.Role))
+            .ThrowsAsync(new InvalidOperationException(addToRoleExceptionMessage));
+        
+        // not configuring mock for ILogger
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.RegisterAsync - test will throw anyway) 
+        
+        var authService = BuildAuthService(
+            unitOfWork: mockedUnitOfWork.Object,
+            userIdentityService: mockedUserIdentityService.Object,
+            mapper: mockedMapper.Object);
+        
+        var exception = await Should.ThrowAsync<InvalidOperationException>(
+            async () => await authService.RegisterAsync(mockedRequest, CancellationToken.None));
+        
+        exception.Message.ShouldBe(addToRoleExceptionMessage);
+        
+        // not checking verifying .CommitAsync to be called Times.Never times cause it is covered automatically 
+        // with not-configuring Setup for mockedUnitOfWork.RollbackAsync + MockBehavior.Strict for mockedUnitOfWork 
+        // (test will throw and not pass if mockedUnitOfWork.RollbackAsync will be called)
+        mockedUnitOfWork.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 
     private static User BuildMockedUser()
     {

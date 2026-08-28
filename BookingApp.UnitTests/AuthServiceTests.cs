@@ -366,6 +366,37 @@ public class AuthServiceTests
         
         mockedAccessTokenService.Verify(x => x.GenerateAccessToken(mockedAuthenticatedUserResult), Times.Once);
     }
+
+    [Fact]
+    public async Task AuthService_LoginAsync_WhenInvalidLoginCredentials_ShouldNotGenerateRefreshAndAccessToken()
+    {
+        var mockedLoginRequest = BuildMockedLoginRequest();
+        const string mockedAuthenticatedUserResultErrorMessage = "Could not authenticate user";
+        
+        var mockedUserIdentityService = new Mock<IUserIdentityService>(MockBehavior.Strict);
+        mockedUserIdentityService
+            .Setup(x => x.AuthenticateAsync(mockedLoginRequest.Email, mockedLoginRequest.Password))
+            .ReturnsAsync(OperationResult<AuthenticatedUserResult>.Failure([mockedAuthenticatedUserResultErrorMessage]));
+
+        /* Mocking only IUserIdentityService (mockedUserIdentityService.AuthenticateAsync) because 
+           we don't expect other dependencies to be invoked in this test 
+           (real AuthService.LoginAsync returns early when AuthenticatedUserResult.Succeeded = false).
+           
+           If real AuthService.LoginAsync will be updated to proceed after IUserIdentityService.AuthenticateAsync
+           and use another methods except IUserIdentityService - this test will fail automatically 
+           due to MockBehavior.Strict  
+        */ 
+        
+        var authService = BuildAuthService(
+            userIdentityService: mockedUserIdentityService.Object);
+        
+        var loginResult = await authService.LoginAsync(mockedLoginRequest, CancellationToken.None);
+        
+        loginResult.Succeeded.ShouldBeFalse();
+        loginResult.Errors.ShouldBe([mockedAuthenticatedUserResultErrorMessage]);
+        
+        mockedUserIdentityService.Verify(x => x.AuthenticateAsync(mockedLoginRequest.Email, mockedLoginRequest.Password), Times.Once);
+    }
     
     private static User BuildMockedUser()
     {

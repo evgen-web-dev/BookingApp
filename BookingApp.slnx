@@ -4,4 +4,5 @@
   <Project Path="BookingApp.Application/BookingApp.Application.csproj" />
   <Project Path="BookingApp.Domain/BookingApp.Domain.csproj" />
   <Project Path="BookingApp.Infrastructure/BookingApp.Infrastructure.csproj" />
+  <Project Path="BookingApp.UnitTests/BookingApp.UnitTests.csproj" />
 </Solution>

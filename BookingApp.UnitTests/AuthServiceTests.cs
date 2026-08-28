@@ -1,5 +1,6 @@
 using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Auth;
+using BookingApp.Application.Exceptions.Auth;
 using BookingApp.Application.Interfaces;
 using BookingApp.Application.Options.Auth;
 using BookingApp.Application.Services;
@@ -396,6 +397,144 @@ public class AuthServiceTests
         loginResult.Errors.ShouldBe([mockedAuthenticatedUserResultErrorMessage]);
         
         mockedUserIdentityService.Verify(x => x.AuthenticateAsync(mockedLoginRequest.Email, mockedLoginRequest.Password), Times.Once);
+    }
+
+    [Fact]
+    public async Task AuthService_LoginAsync_WhenExceptionThrownWithinActiveTransactionInTryBlock_ShouldRollbackChanges()
+    {
+        var mockedLoginRequest = BuildMockedLoginRequest();
+        var mockedAuthenticatedResult = BuildMockedAuthenticatedUserResult(mockedLoginRequest.Email);
+        const string mockedInvalidRefreshToken = "some-invalid-refresh-token";
+        
+        // mocking IUserIdentityService
+        var mockedUserIdentityService = new Mock<IUserIdentityService>(MockBehavior.Strict);
+        mockedUserIdentityService
+            .Setup(x => x.AuthenticateAsync(mockedLoginRequest.Email, mockedLoginRequest.Password))
+            .ReturnsAsync(OperationResult<AuthenticatedUserResult>.Success(mockedAuthenticatedResult));
+        
+        // mocking UoW
+        var mockedUnitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        mockedUnitOfWork
+            .Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockedUnitOfWork
+            .Setup(x => x.RollbackAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        
+        mockedUnitOfWork.Setup(x => x.HasActiveTransaction).Returns(true);
+        
+        // not configuring mock for mockedUnitOfWork.CommitAsync here
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.LoginAsync - test will throw anyway)
+
+        // mocking ITokenFamilyRepository
+        var mockedRefreshTokenFamilyRepository = new Mock<ITokenFamilyRepository>(MockBehavior.Strict);
+        mockedRefreshTokenFamilyRepository
+            .Setup(x => x.Add(It.IsAny<TokenFamily>()));
+        
+        // not configuring mock for IRefreshTokenRepository here
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.LoginAsync - test will throw anyway)
+
+        // mocking IRefreshTokenService
+        var mockedRefreshTokenService = new Mock<IRefreshTokenService>(MockBehavior.Strict);
+        mockedRefreshTokenService
+            .Setup(x => x.GenerateRefreshToken())
+            .Returns(mockedInvalidRefreshToken);
+
+        mockedRefreshTokenService
+            .Setup(x => x.TryHashRefreshToken(mockedInvalidRefreshToken, out It.Ref<string>.IsAny))
+            .Returns(false);
+        
+        var authService = BuildAuthService(
+            unitOfWork: mockedUnitOfWork.Object,
+            tokenFamilyRepository: mockedRefreshTokenFamilyRepository.Object,
+            userIdentityService: mockedUserIdentityService.Object,
+            refreshTokenService: mockedRefreshTokenService.Object);
+        
+        // expect mockedRefreshTokenService.TryHashRefreshToken to throw here
+        // with InvalidRefreshTokenHashGenerationException
+        await Should.ThrowAsync<InvalidRefreshTokenHashGenerationException>(
+            async () => await authService.LoginAsync(mockedLoginRequest, CancellationToken.None));
+        
+        mockedUserIdentityService.Verify(x => x.AuthenticateAsync(mockedLoginRequest.Email, mockedLoginRequest.Password), Times.Once);
+        
+        mockedUnitOfWork.Verify(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        
+        mockedRefreshTokenFamilyRepository.Verify(x => x.Add(It.IsAny<TokenFamily>()), Times.Once);
+        
+        mockedRefreshTokenService.Verify(x => x.GenerateRefreshToken(), Times.Once);
+        mockedRefreshTokenService.Verify(x => x.TryHashRefreshToken(mockedInvalidRefreshToken, out It.Ref<string>.IsAny), Times.Once);
+        
+        mockedUnitOfWork.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        
+        mockedUnitOfWork.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+    
+    [Fact]
+    public async Task AuthService_LoginAsync_WhenExceptionThrownWithinClosedTransactionInTryBlock_ShouldNotRollbackChanges()
+    {
+        var mockedLoginRequest = BuildMockedLoginRequest();
+        var mockedAuthenticatedResult = BuildMockedAuthenticatedUserResult(mockedLoginRequest.Email);
+        const string mockedInvalidRefreshToken = "some-invalid-refresh-token";
+        
+        // mocking IUserIdentityService
+        var mockedUserIdentityService = new Mock<IUserIdentityService>(MockBehavior.Strict);
+        mockedUserIdentityService
+            .Setup(x => x.AuthenticateAsync(mockedLoginRequest.Email, mockedLoginRequest.Password))
+            .ReturnsAsync(OperationResult<AuthenticatedUserResult>.Success(mockedAuthenticatedResult));
+        
+        // mocking UoW
+        var mockedUnitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        mockedUnitOfWork
+            .Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        
+        mockedUnitOfWork.Setup(x => x.HasActiveTransaction).Returns(false);
+
+        // not configuring mock for mockedUnitOfWork.CommitAsync and mockedUnitOfWork.RollbackAsync here
+        // cause they are not expected to be called in the scope that this test covers
+        // (if either of them will be called in real AuthService.LoginAsync - test will throw/fail anyway)
+
+        // mocking ITokenFamilyRepository
+        var mockedRefreshTokenFamilyRepository = new Mock<ITokenFamilyRepository>(MockBehavior.Strict);
+        mockedRefreshTokenFamilyRepository
+            .Setup(x => x.Add(It.IsAny<TokenFamily>()));
+        
+        // not configuring mock for IRefreshTokenRepository here
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.LoginAsync - test will throw anyway)
+
+        // mocking IRefreshTokenService
+        var mockedRefreshTokenService = new Mock<IRefreshTokenService>(MockBehavior.Strict);
+        mockedRefreshTokenService
+            .Setup(x => x.GenerateRefreshToken())
+            .Returns(mockedInvalidRefreshToken);
+
+        mockedRefreshTokenService
+            .Setup(x => x.TryHashRefreshToken(mockedInvalidRefreshToken, out It.Ref<string>.IsAny))
+            .Returns(false);
+        
+        var authService = BuildAuthService(
+            unitOfWork: mockedUnitOfWork.Object,
+            tokenFamilyRepository: mockedRefreshTokenFamilyRepository.Object,
+            userIdentityService: mockedUserIdentityService.Object,
+            refreshTokenService: mockedRefreshTokenService.Object);
+        
+        // expect mockedRefreshTokenService.TryHashRefreshToken to throw here
+        // with InvalidRefreshTokenHashGenerationException
+        await Should.ThrowAsync<InvalidRefreshTokenHashGenerationException>(
+            async () => await authService.LoginAsync(mockedLoginRequest, CancellationToken.None));
+        
+        mockedUserIdentityService.Verify(x => x.AuthenticateAsync(mockedLoginRequest.Email, mockedLoginRequest.Password), Times.Once);
+        
+        mockedUnitOfWork.Verify(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        
+        mockedRefreshTokenFamilyRepository.Verify(x => x.Add(It.IsAny<TokenFamily>()), Times.Once);
+        
+        mockedRefreshTokenService.Verify(x => x.GenerateRefreshToken(), Times.Once);
+        mockedRefreshTokenService.Verify(x => x.TryHashRefreshToken(mockedInvalidRefreshToken, out It.Ref<string>.IsAny), Times.Once);
     }
     
     private static User BuildMockedUser()

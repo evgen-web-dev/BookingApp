@@ -18,21 +18,8 @@ public class AuthServiceTests
     [Fact]
     public async Task AuthService_RegisterAsync_WhenRegisterRequestIsValidAndNoExceptionsThrown_ShouldCreateUser()
     {
-        var mockedUser = new User
-        {
-            FirstName = "Test First Name",
-            LastName = "Test Last Name",
-            DateOfBirth = new DateOnly(1999, 10,10)
-        };
-        var mockedRequest = new RegisterRequest
-        {
-            FirstName = "Test First Name",
-            LastName = "Test Last Name",
-            DateOfBirth = new DateOnly(1999, 10,10),
-            Email = "test@example.com",
-            Password = "Pa$$word1",
-            Role = Roles.Client
-        };
+        var mockedUser = BuildMockedUser();
+        var mockedRequest = BuildMockedRegisterRequest();
         var mockedCreateUserResult = new CreateUserResult(1);
         
         // mocking UoW
@@ -74,6 +61,82 @@ public class AuthServiceTests
         registerResult.Value.Id.ShouldBe(mockedCreateUserResult.Id);
         
         mockedUnitOfWork.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+    
+    [Fact]
+    public async Task AuthService_RegisterAsync_WhenUserIdentityServiceCreateAsyncFails_ShouldNotCreateUser()
+    {
+        var mockedUser = BuildMockedUser();
+        var mockedRequest = BuildMockedRegisterRequest();
+        const string couldNotCreateUserErrorMessage = "Could not create user";
+        
+        // mocking UoW
+        var mockedUnitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        mockedUnitOfWork
+            .Setup(x => x.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        
+        mockedUnitOfWork
+            .Setup(x => x.RollbackAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // not configuring mock for mockedUnitOfWork.CommitAsync and mockedUnitOfWork.HasActiveTransaction
+        // cause they are not expected to be called in the scope that this test covers
+        // (if either of them will be called in real AuthService.RegisterAsync - test will throw anyway) 
+
+        // mocking Mapster mapper
+        var mockedMapper = new Mock<IMapper>(MockBehavior.Strict);
+        mockedMapper
+            .Setup(x => x.Map<User>(mockedRequest))
+            .Returns(mockedUser);
+        
+        // mocking IUserIdentityService
+        var mockedUserIdentityService = new Mock<IUserIdentityService>(MockBehavior.Strict);
+        mockedUserIdentityService
+            .Setup(x => x.CreateAsync(mockedUser, mockedRequest.Password))
+            .ReturnsAsync(OperationResult<CreateUserResult>.Failure([couldNotCreateUserErrorMessage]));
+        
+        // not configuring mocks for mockedUserIdentityService.AddToRoleAsync
+        // cause it is not expected to be called in the scope that this test covers
+        // (if it will be called in real AuthService.RegisterAsync - test will throw anyway) 
+        
+        // mocking ILogger
+        var mockedLogger = new Mock<ILogger<AuthService>>(MockBehavior.Strict);
+        
+        var authService = BuildAuthService(
+            unitOfWork: mockedUnitOfWork.Object,
+            userIdentityService: mockedUserIdentityService.Object,
+            mapper: mockedMapper.Object,
+            logger: mockedLogger.Object);
+
+        var registerResult = await authService.RegisterAsync(mockedRequest, CancellationToken.None);
+        
+        registerResult.Succeeded.ShouldBeFalse();
+        registerResult.Errors.ShouldBe([couldNotCreateUserErrorMessage]);
+        mockedUnitOfWork.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private static User BuildMockedUser()
+    {
+        return new User
+        {
+            FirstName = "Test First Name",
+            LastName = "Test Last Name",
+            DateOfBirth = new DateOnly(1999, 10,10)
+        };
+    }
+    
+    private static RegisterRequest BuildMockedRegisterRequest()
+    {
+        return new RegisterRequest
+        {
+            FirstName = "Test First Name",
+            LastName = "Test Last Name",
+            DateOfBirth = new DateOnly(1999, 10,10),
+            Email = "test@example.com",
+            Password = "Pa$$word1",
+            Role = Roles.Client
+        };
     }
     
     private static IAuthService BuildAuthService(

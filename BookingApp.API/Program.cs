@@ -43,6 +43,8 @@ if (app.Environment.IsDevelopment())
         options.DisableDefaultFonts();
         options.DisableTelemetry();
     });
+    
+    await ApartmentsWithBookingsSeeder.SeedApartmentsWithBookingsAsync(app.Services);
 }
 
 app.UseExceptionHandler();

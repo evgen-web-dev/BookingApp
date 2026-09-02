@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using BookingApp.Application.DTOs.Apartment;
 using BookingApp.Application.DTOs.Auth;
 using BookingApp.Application.Interfaces;
 using BookingApp.Application.Options.Auth;
@@ -24,6 +26,15 @@ public static class DependencyInjectionExtensions
             .Map(dest => dest.MiddleName, src => src.MiddleName)
             .Map(dest => dest.DateOfBirth, src => src.DateOfBirth)
             .IgnoreNonMapped(true);
+         
+         config.NewConfig<Apartment, ApartmentDetailsResponse>()
+             .Map(dest => dest.Id, src => src.Id)
+             .Map(dest => dest.Title, src => src.Title)
+             .Map(dest => dest.Location, src => src.Location)
+             .Map(dest => dest.Description, src => src.Description)
+             .Map(dest => dest.Capacity, src => src.Capacity)
+             .Map(dest => dest.Price, src => src.Price)
+             .IgnoreNonMapped(true);
          
          services.AddSingleton<IMapper>(new Mapper(config));
          

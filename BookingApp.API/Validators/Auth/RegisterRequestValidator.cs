@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using BookingApp.Application.DTOs.Auth;
 using BookingApp.Domain;
 using FluentValidation;
@@ -32,13 +33,9 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
       - etc
      */
     
-    /*
-    TODO: confirm that allowing "." (dot) as a spec character inside of the name in NameCharactersRegExpPattern
-    is intentional and not a bug.
-    If the correctness of allowing "." (dot) as a spec character inside of the name in NameCharactersRegExpPattern
-    is confirmed - then remove "Jack.Jack" from "Strings this regexp will not accept" list.
-     */
     private const string NameCharactersRegExpPattern = @"^\p{L}[\p{L}'’ʼ`´.\-–—\s]*$";
+    // a period that ends a real word and is glued to the next word: "Jack.Jack"
+    private const string GluedPeriodRegExpPattern = @"\p{L}\p{L}\.\p{L}";
     
     public RegisterRequestValidator()
     {
@@ -47,14 +44,18 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
             .NotEmpty()
             .MinimumLength(NameMinLength)
             .MaximumLength(NameMaxLength)
-            .Matches(NameCharactersRegExpPattern);
+            .Must(name => new Regex(NameCharactersRegExpPattern).IsMatch(name)
+                          && !new Regex(GluedPeriodRegExpPattern).IsMatch(name))
+                .WithMessage("'{PropertyName}' contains invalid characters.");
 
         RuleFor(x => x.LastName)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .MinimumLength(NameMinLength)
             .MaximumLength(NameMaxLength)
-            .Matches(NameCharactersRegExpPattern);
+            .Must(name => new Regex(NameCharactersRegExpPattern).IsMatch(name)
+                          && !new Regex(GluedPeriodRegExpPattern).IsMatch(name))
+                .WithMessage("'{PropertyName}' contains invalid characters.");
 
         RuleFor(x => x.MiddleName)
             .Cascade(CascadeMode.Stop)
@@ -62,8 +63,11 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
                 .When(x => !string.IsNullOrEmpty(x.MiddleName))
             .MaximumLength(NameMaxLength)
                 .When(x => !string.IsNullOrEmpty(x.MiddleName))
-            .Matches(NameCharactersRegExpPattern)
-                .When(x => !string.IsNullOrEmpty(x.MiddleName));
+            .Must(name => new Regex(NameCharactersRegExpPattern).IsMatch(name)
+                          && !new Regex(GluedPeriodRegExpPattern).IsMatch(name))
+                .When(x => !string.IsNullOrEmpty(x.MiddleName))
+                .WithMessage("'{PropertyName}' contains invalid characters.");
+        
 
         RuleFor(x => x.Email)
             .Cascade(CascadeMode.Stop)
@@ -79,7 +83,7 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
             .Must(dateOfBirth => dateOfBirth > DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-200))
                 .WithMessage("Your age must be under 200 years.")
             .Must(dateOfBirth => dateOfBirth <= DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-18))
-            .WithMessage("You must be 18 at least years old.");
+                .WithMessage("You must be 18 at least years old.");
 
         RuleFor(x => x.Role)
             .Cascade(CascadeMode.Stop)

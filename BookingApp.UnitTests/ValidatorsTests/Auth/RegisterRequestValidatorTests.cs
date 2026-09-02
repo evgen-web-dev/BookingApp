@@ -115,6 +115,7 @@ public class RegisterRequestValidatorTests
     [InlineData("Jack_Jack")]
     [InlineData("Jack!Jack")]
     [InlineData("Jack:Jack")]
+    [InlineData("Jack.Jack")]
     [InlineData("SomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250Characters")]
     public void FirstName_WhenInvalid_ShouldHaveValidatorError(string? firstName)
     {
@@ -132,15 +133,6 @@ public class RegisterRequestValidatorTests
     // Deliberately allowing string (including multiple consecutive) spec-symbols because names can be messy
     [InlineData("Jack----Jack")]
     [InlineData("Jack JR.")]
-    /*
-     As of 26.08.2026:
-     according RegisterRequestValidatorTests's comment for NameCharactersRegExpPattern to '.' is not allowed to be in the name
-     but the NameCharactersRegExpPattern itself - allows to have '.' character in the middle of a name.
-     This mismatch flagged via 
-     "TODO" 
-     in RegisterRequestValidatorTests
-    */
-    [InlineData("Jack.Jack")]
     public void FirstName_WhenValid_ShouldNotHaveValidatorError(string? firstName)
     {
         var registerRequest = BuildRegisterRequest(firstName: firstName);
@@ -165,6 +157,7 @@ public class RegisterRequestValidatorTests
     [InlineData("Jack_Jack")]
     [InlineData("Jack!Jack")]
     [InlineData("Jack:Jack")]
+    [InlineData("Jack.Jack")]
     [InlineData("SomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250Characters")]
     public void LastName_WhenInvalid_ShouldHaveValidatorError(string? lastName)
     {
@@ -182,15 +175,6 @@ public class RegisterRequestValidatorTests
     // Deliberately allowing string (including multiple consecutive) spec-symbols because names can be messy
     [InlineData("Jack----Jack")]
     [InlineData("Jack JR.")]
-    /*
-     As of 26.08.2026:
-     according RegisterRequestValidatorTests's comment for NameCharactersRegExpPattern to '.' is not allowed to be in the name
-     but the NameCharactersRegExpPattern itself - allows to have '.' character in the middle of a name.
-     This mismatch flagged via 
-     "TODO" 
-     in RegisterRequestValidatorTests
-    */
-    [InlineData("Jack.Jack")]
     public void LastName_WhenValid_ShouldNotHaveValidatorError(string? lastName)
     {
         var registerRequest = BuildRegisterRequest(lastName: lastName);
@@ -211,6 +195,7 @@ public class RegisterRequestValidatorTests
     [InlineData("Jack_Jack")]
     [InlineData("Jack!Jack")]
     [InlineData("Jack:Jack")]
+    [InlineData("Jack.Jack")]
     [InlineData("SomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250CharactersSomeVeryVeryVeryLongNameWhichIsdLongerThan250Characters")]
     public void MiddleName_WhenInvalid_ShouldHaveValidatorError(string? middleName)
     {
@@ -231,15 +216,6 @@ public class RegisterRequestValidatorTests
     // Deliberately allowing string (including multiple consecutive) spec-symbols because names can be messy
     [InlineData("Jack----Jack")]
     [InlineData("Jack JR.")]
-    /*
-     As of 26.08.2026:
-     according RegisterRequestValidatorTests's comment for NameCharactersRegExpPattern to '.' is not allowed to be in the name
-     but the NameCharactersRegExpPattern itself - allows to have '.' character in the middle of a name.
-     This mismatch flagged via
-     "TODO"
-     in RegisterRequestValidatorTests
-    */
-    [InlineData("Jack.Jack")]
     public void MiddleName_WhenValid_ShouldNotHaveValidatorError(string? middleName)
     {
         var registerRequest = BuildRegisterRequest(middleName: middleName);

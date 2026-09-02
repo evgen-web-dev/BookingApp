@@ -64,17 +64,17 @@ public sealed class AuthServiceTests
     
     public AuthServiceTests()
     {
-        _accessTokenService = new (MockBehavior.Strict);
-        _logger = new (MockBehavior.Strict);
+        _accessTokenService = new Mock<IAccessTokenService>();
+        _logger = new Mock<ILogger<AuthService>>();
         _tokenFamilyOptions = Options.Create(new TokenFamilyOptions { RefreshTokenLifeTimeDays = 3, TokenFamilyAbsoluteLifeTimeDays = 14 });
-        _unitOfWork = new (MockBehavior.Strict);
-        _mapper = new (MockBehavior.Strict);
-        _userIdentityService = new (MockBehavior.Strict);
-        _tokenFamilyService = new (MockBehavior.Strict);
-        _tokenFamilyRepository = new (MockBehavior.Strict);
-        _refreshTokenService = new (MockBehavior.Strict);
-        _refreshTokenRevoker = new (MockBehavior.Strict);
-        _refreshTokenRepository = new (MockBehavior.Strict);
+        _unitOfWork = new Mock<IUnitOfWork>();
+        _mapper = new Mock<IMapper>();
+        _userIdentityService = new Mock<IUserIdentityService>();
+        _tokenFamilyService = new Mock<ITokenFamilyService>();
+        _tokenFamilyRepository = new Mock<ITokenFamilyRepository>();
+        _refreshTokenService = new Mock<IRefreshTokenService>();
+        _refreshTokenRevoker = new Mock<IRefreshTokenRevoker>();
+        _refreshTokenRepository = new Mock<IRefreshTokenRepository>();
         
         
         _authenticatedUserResult = new AuthenticatedUserResult()

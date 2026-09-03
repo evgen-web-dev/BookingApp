@@ -20,6 +20,9 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IAccessTokenService, JsonWebTokenService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
+        services.AddScoped<IBookingRepository, BookingRepository>();
+        
+        services.AddSingleton(TimeProvider.System);
         
         return services;
     }

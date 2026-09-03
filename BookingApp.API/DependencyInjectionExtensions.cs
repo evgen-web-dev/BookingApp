@@ -107,6 +107,6 @@ public static class DependencyInjectionExtensions
             path,
             title);
 
-        return new ObjectResult(problemDetails);
+        return new ObjectResult(problemDetails) { StatusCode = errorStatusCode };
     }
 }

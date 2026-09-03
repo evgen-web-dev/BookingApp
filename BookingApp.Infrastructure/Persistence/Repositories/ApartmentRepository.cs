@@ -21,4 +21,10 @@ public class ApartmentRepository : IApartmentRepository
             .Where(apartment => !apartment.Bookings.Any(booking => booking.CheckIn < endDate && booking.CheckOut > startDate))
             .ToListAsync();
     }
+
+    public async Task<bool> ExistsAsync(int apartmentId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.Set<Apartment>()
+            .AnyAsync(apartment => apartment.Id == apartmentId, cancellationToken);
+    }
 }

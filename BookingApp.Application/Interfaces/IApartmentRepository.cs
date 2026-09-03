@@ -6,4 +6,5 @@ namespace BookingApp.Application.Interfaces;
 public interface IApartmentRepository
 {
     Task<List<Apartment>> FindAvailableAsync(DateTime? startDate, DateTime? endDate);
+    Task<bool> ExistsAsync(int apartmentId, CancellationToken cancellationToken);
 }

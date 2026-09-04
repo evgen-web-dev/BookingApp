@@ -45,7 +45,8 @@ public class BookingService : IBookingService
             return OperationResult<BookingResponse>.Failure([BookingErrorCodes.ApartmentNotFound]);
         }
         
-        if (!await _bookingRepository.HasOverlappingBookingAsync(request.ApartmentId, request.CheckIn, request.CheckOut, cancellationToken))
+        // TODO: implement proper locking mechanism for resolving TOCTOU (creating a new booking is not race-safe at the moment)
+        if (await _bookingRepository.HasOverlappingBookingAsync(request.ApartmentId, request.CheckIn, request.CheckOut, cancellationToken))
         {
             return OperationResult<BookingResponse>.Failure([BookingErrorCodes.ApartmentNotAvailable]);
         }
@@ -88,7 +89,16 @@ public class BookingService : IBookingService
         
         return OperationResult<BookingResponse>.Success(_mapper.Map<BookingResponse>(bookingInstance));
     }
-    
+
+    public async Task<OperationResult<MyBookingsResponse>> GetMyBookingsAsync(int callerId, CancellationToken cancellationToken)
+    {
+        var bookings = await _bookingRepository.FindByClientIdAsync(callerId, cancellationToken);
+        return OperationResult<MyBookingsResponse>.Success(new MyBookingsResponse
+        {
+            Bookings = _mapper.Map<List<BookingResponse>>(bookings)
+        });
+    }
+
     private async Task SafeRollbackAsync(CancellationToken cancellationToken)
     {
         try

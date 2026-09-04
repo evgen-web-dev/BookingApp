@@ -62,6 +62,7 @@ public static class DependencyInjectionExtensions
         services.AddScoped<IRefreshTokenRevoker, RefreshTokenRevoker>();
         services.AddScoped<IRefreshTokenReuseHandler, RefreshTokenReuseHandler>();
         services.AddScoped<ITokenFamilyService, TokenFamilyService>();
+        services.AddScoped<IBookingService, BookingService>();
         
         return services;
     }

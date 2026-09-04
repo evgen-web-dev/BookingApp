@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using BookingApp.Application.DTOs.Booking;
+using BookingApp.Application.DTOs.Common;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain;
 using Microsoft.AspNetCore.Authorization;
@@ -35,11 +36,11 @@ public class BookingsController : ControllerBase
     
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<MyBookingsResponse>> GetBookingsAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<PaginatedResponse<BookingResponse>>> GetBookingsAsync([FromQuery] MyBookingsPaginatedRequest request, CancellationToken cancellationToken)
     {
         var userId = GetUserIdFromClaim();
 
-        var getMyBookingsResult = await _bookingService.GetMyBookingsAsync(userId, cancellationToken);
+        var getMyBookingsResult = await _bookingService.GetMyBookingsAsync(request, userId, cancellationToken);
         if (!getMyBookingsResult.Succeeded)
         {
             return getMyBookingsResult.ToProblemDetailsResult(Request.Path);

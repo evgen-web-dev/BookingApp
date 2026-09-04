@@ -1,3 +1,4 @@
+using BookingApp.Application.DTOs.Common;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -25,12 +26,25 @@ public class BookingRepository : IBookingRepository
             .FirstOrDefaultAsync(booking => booking.Id == id, cancellationToken);
     }
 
-    public async Task<List<Booking>> FindByClientIdAsync(int clientId, CancellationToken cancellationToken)
+    public async Task<PagedResult<Booking>> FindByClientIdAsync(int clientId, PageQueryParams pageQueryParams, CancellationToken cancellationToken)
     {
-        return await _dbContext.Set<Booking>()
+        var query = _dbContext.Set<Booking>()
             .AsNoTracking()
-            .Where(booking => booking.ClientId == clientId)
+            .Where(booking => booking.ClientId == clientId);
+        
+        var totalCount = await query.CountAsync(cancellationToken);
+        
+        var items = await query
+            .OrderBy(booking => booking.Id)
+            .Skip((pageQueryParams.PageNumber - 1) * pageQueryParams.PageSize)
+            .Take(pageQueryParams.PageSize)
             .ToListAsync(cancellationToken);
+        
+        return new PagedResult<Booking>
+        {
+            Items = items,
+            TotalCount = totalCount,
+        };
     }
 
     public async Task<bool> HasOverlappingBookingAsync(int apartmentId, DateTime checkInDate, DateTime checkOutDate, CancellationToken cancellationToken)

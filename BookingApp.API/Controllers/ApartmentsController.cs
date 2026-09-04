@@ -1,4 +1,5 @@
 using BookingApp.Application.DTOs.Apartment;
+using BookingApp.Application.DTOs.Common;
 using BookingApp.Application.Interfaces;
 using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +20,23 @@ public class ApartmentsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<AvailableApartmentsResponse>> GetAvailableApartments([FromQuery] AvailableApartmentsRequest request)
+    public async Task<ActionResult<PaginatedResponse<ApartmentDetailsResponse>>> GetAvailableApartments(
+        [FromQuery] AvailableApartmentsPaginatedRequest request, CancellationToken cancellationToken)
     {
-        var availableApartments = await _apartmentRepository.FindAvailableAsync(
-            request.AvailableFrom?.Date, request.AvailableTo?.Date);
+        var pagesQueryParams = new PageQueryParams { PageSize = request.PageSize, PageNumber = request.PageNumber };
         
-        return Ok(new AvailableApartmentsResponse
-        {
-            Apartments = _mapper.Map<List<ApartmentDetailsResponse>>(availableApartments)
-        });
+        var availableApartments = await _apartmentRepository.FindAvailableAsync(
+            request.AvailableFrom?.Date, 
+            request.AvailableTo?.Date, 
+            pagesQueryParams,
+            cancellationToken);
+        
+        return Ok(
+            PaginatedResponse<ApartmentDetailsResponse>
+            .Create(
+                _mapper.Map<List<ApartmentDetailsResponse>>(availableApartments.Items),
+                pagesQueryParams,
+                availableApartments.TotalCount)
+        );
     }
 }

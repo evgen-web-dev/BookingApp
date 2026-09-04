@@ -1,5 +1,6 @@
 using BookingApp.Application.DTOs;
 using BookingApp.Application.DTOs.Booking;
+using BookingApp.Application.DTOs.Common;
 using BookingApp.Application.Errors;
 using BookingApp.Application.Interfaces;
 using BookingApp.Domain.Entities;
@@ -90,13 +91,22 @@ public class BookingService : IBookingService
         return OperationResult<BookingResponse>.Success(_mapper.Map<BookingResponse>(bookingInstance));
     }
 
-    public async Task<OperationResult<MyBookingsResponse>> GetMyBookingsAsync(int callerId, CancellationToken cancellationToken)
+    public async Task<OperationResult<PaginatedResponse<BookingResponse>>> GetMyBookingsAsync(MyBookingsPaginatedRequest request, int callerId, CancellationToken cancellationToken)
     {
-        var bookings = await _bookingRepository.FindByClientIdAsync(callerId, cancellationToken);
-        return OperationResult<MyBookingsResponse>.Success(new MyBookingsResponse
-        {
-            Bookings = _mapper.Map<List<BookingResponse>>(bookings)
-        });
+        var pagesQueryParams = new PageQueryParams { PageSize = request.PageSize, PageNumber = request.PageNumber };
+        
+        var bookingsPagedResult = await _bookingRepository.FindByClientIdAsync(
+            callerId,
+            pagesQueryParams,
+            cancellationToken);
+        
+        return OperationResult<PaginatedResponse<BookingResponse>>
+            .Success(
+                PaginatedResponse<BookingResponse>.Create(
+                    _mapper.Map<List<BookingResponse>>(bookingsPagedResult.Items),
+                    pagesQueryParams, 
+                    bookingsPagedResult.TotalCount)
+            );
     }
 
     private async Task SafeRollbackAsync(CancellationToken cancellationToken)

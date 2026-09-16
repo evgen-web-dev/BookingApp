@@ -38,4 +38,8 @@ public record OperationResult<TValue> : OperationResult where TValue : notnull
     }
 
     public new static OperationResult<TValue> Failure(IReadOnlyList<string> errors) => new OperationResult<TValue> { Succeeded = false, Errors = errors };
+    
+    // Success values can be returned implicitly for cleaner happy-path code.
+    // Failures remain explicit via .Failure(...).
+    public static implicit operator OperationResult<TValue>(TValue value) => Success(value);
 }

@@ -65,7 +65,7 @@ public class BookingService : IBookingService
         try
         {
             await _unitOfWork.CommitAsync(cancellationToken);
-            return OperationResult<BookingResponse>.Success(_mapper.Map<BookingResponse>(bookingInstance));
+            return _mapper.Map<BookingResponse>(bookingInstance);
         }
         catch
         {
@@ -88,7 +88,7 @@ public class BookingService : IBookingService
             return OperationResult<BookingResponse>.Failure([BookingErrorCodes.BookingNotFound]);
         }
         
-        return OperationResult<BookingResponse>.Success(_mapper.Map<BookingResponse>(bookingInstance));
+        return _mapper.Map<BookingResponse>(bookingInstance);
     }
 
     public async Task<OperationResult<PaginatedResponse<BookingResponse>>> GetMyBookingsAsync(MyBookingsPaginatedRequest request, int callerId, CancellationToken cancellationToken)
@@ -100,13 +100,10 @@ public class BookingService : IBookingService
             pagesQueryParams,
             cancellationToken);
         
-        return OperationResult<PaginatedResponse<BookingResponse>>
-            .Success(
-                PaginatedResponse<BookingResponse>.Create(
-                    _mapper.Map<List<BookingResponse>>(bookingsPagedResult.Items),
-                    pagesQueryParams, 
-                    bookingsPagedResult.TotalCount)
-            );
+        return PaginatedResponse<BookingResponse>.Create(
+            _mapper.Map<List<BookingResponse>>(bookingsPagedResult.Items),
+            pagesQueryParams, 
+            bookingsPagedResult.TotalCount);
     }
 
     private async Task SafeRollbackAsync(CancellationToken cancellationToken)

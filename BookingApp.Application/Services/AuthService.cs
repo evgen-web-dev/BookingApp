@@ -5,7 +5,6 @@ using BookingApp.Application.Exceptions.Auth;
 using BookingApp.Application.Interfaces;
 using BookingApp.Application.Options.Auth;
 using BookingApp.Domain.Entities;
-using Mapster;
 using MapsterMapper;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

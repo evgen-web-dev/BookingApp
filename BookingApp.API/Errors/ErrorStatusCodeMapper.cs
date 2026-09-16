@@ -10,7 +10,11 @@ public static class ErrorStatusCodeMapper
         [AuthErrorCodes.InvalidRefreshToken] = StatusCodes.Status401Unauthorized,
         [AuthErrorCodes.UserNotFound] = StatusCodes.Status401Unauthorized,
         [AuthErrorCodes.InvalidEmailOrUserName] = StatusCodes.Status400BadRequest,
-        [GenericErrorCodes.UnexpectedError] = StatusCodes.Status500InternalServerError
+        [GenericErrorCodes.UnexpectedError] = StatusCodes.Status500InternalServerError,
+        [BookingErrorCodes.ApartmentNotFound] = StatusCodes.Status404NotFound,
+        [BookingErrorCodes.ApartmentNotAvailable] = StatusCodes.Status409Conflict,
+        [BookingErrorCodes.InvalidCheckInDate] = StatusCodes.Status400BadRequest,
+        [BookingErrorCodes.BookingNotFound] = StatusCodes.Status404NotFound,
     };
 
     public static int GetStatusCodeForError(string error, int fallbackStatusCode = StatusCodes.Status500InternalServerError)

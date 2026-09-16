@@ -38,8 +38,8 @@ public static class DependencyInjectionExtensions
              .IgnoreNonMapped(true);
          
          config.NewConfig<CreateBookingRequest, Booking>()
-             .Map(dest => dest.CheckIn, src => src.CheckIn)
-             .Map(dest => dest.CheckOut, src => src.CheckOut)
+             .Map(dest => dest.CheckIn, src => src.CheckIn.Date)
+             .Map(dest => dest.CheckOut, src => src.CheckOut.Date)
              .Map(dest => dest.ApartmentId, src => src.ApartmentId)
              .IgnoreNonMapped(true);
          

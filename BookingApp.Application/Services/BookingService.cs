@@ -47,7 +47,7 @@ public class BookingService : IBookingService
         }
         
         // TODO: implement proper locking mechanism for resolving TOCTOU (creating a new booking is not race-safe at the moment)
-        if (await _bookingRepository.HasOverlappingBookingAsync(request.ApartmentId, request.CheckIn, request.CheckOut, cancellationToken))
+        if (await _bookingRepository.HasOverlappingBookingAsync(request.ApartmentId, request.CheckIn.Date, request.CheckOut.Date, cancellationToken))
         {
             return OperationResult<BookingResponse>.Failure([BookingErrorCodes.ApartmentNotAvailable]);
         }

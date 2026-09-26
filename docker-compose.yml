@@ -1,3 +1,9 @@
+# Host-only development stack: postgres + adminer for running the API from the
+# IDE on the host (appsettings.Development.json points at localhost).
+# NOT the devcontainer stack — .devcontainer/docker-compose.yml has its own.
+# Do not run both: they collide on 127.0.0.1:5432 and :8080, and their pgdata
+# volumes are project-prefixed, so each stack has its own database.
+
 services:
   postgres:
     image: postgres:16

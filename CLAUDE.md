@@ -34,7 +34,7 @@ rather than just running it.
 - Build: `dotnet build`
 - Test: `dotnet test`
 - Run: `dotnet run --project src/BookingApp.API`
-- Probe HTTP: `curl -s -i http://localhost:5000/api/apartments`
+- Probe HTTP: `curl -s -i http://localhost:5184/api/apartments`
 - Probe DB: `psql -h postgres -U booking_app_user -d booking_app -c "<query>"`
   (or Adminer at http://localhost:8080 from the host)
 

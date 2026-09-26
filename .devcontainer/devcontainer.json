@@ -14,15 +14,13 @@
   "containerEnv": {
     "CLAUDE_CONFIG_DIR": "/home/containerdev/.claude",
     "DISABLE_AUTOUPDATER": "1",
-    "ASPNETCORE_ENVIRONMENT": "Development",
-    "ASPNETCORE_URLS": "http://+:5000"
+    "ASPNETCORE_ENVIRONMENT": "Development"
   },
   "remoteEnv": {
     "SSH_AUTH_SOCK": ""
   },
   "forwardPorts": [
-    5000,
-    5432,
+    5184,
     5173,
     8000
   ],

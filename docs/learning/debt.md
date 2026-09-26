@@ -8,7 +8,7 @@ Not @-imported by CLAUDE.md — it's read on demand. Each phase names the IDs it
 owns in current-phase.md, and /review-as-mentor checks for debt added without an
 entry here.
 
-Standing checks moved to decisions.md (they are constraints you re-verify, not open
+Standing checks live in `decisions.md` (they are constraints you re-verify, not open
 work). Everything else below is verbatim from archive/master-original.md §Debt Ledger.
 
 ### Resolved in Phase 4 ✅ *(detail in the phase-4 archive; kept here for traceability)*

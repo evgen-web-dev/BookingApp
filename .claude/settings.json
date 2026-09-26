@@ -28,9 +28,6 @@
       "Bash(dotnet watch:*)",
       "Bash(dotnet publish:*)",
       "Bash(curl:*)",
-      "Bash(sqlcmd:*)",
-      "Bash(docker:*)",
-      "Bash(docker compose:*)",
       "Bash(psql:*)"
     ],
     "deny": [

@@ -24,9 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BookingApp.Domain\BookingApp.Domain.csproj" />
-    <ProjectReference Include="..\BookingApp.Application\BookingApp.Application.csproj" />
-    <ProjectReference Include="..\BookingApp.API\BookingApp.API.csproj" />
+    <ProjectReference Include="..\..\src\BookingApp.Domain\BookingApp.Domain.csproj" />
+    <ProjectReference Include="..\..\src\BookingApp.Application\BookingApp.Application.csproj" />
+    <ProjectReference Include="..\..\src\BookingApp.API\BookingApp.API.csproj" />
   </ItemGroup>
 
 </Project>

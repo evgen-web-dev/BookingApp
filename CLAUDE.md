@@ -19,6 +19,7 @@ Airbnb-style booking system — auth substrate plus booking domain. Portfolio pr
 
 ## Sources of truth
 - What exists: the source code. What should be built: docs/learning/. Memory and earlier sessions are background only.
+- Read docs/learning/handoff.md at the start of every session. It is the only sanctioned carry-over — a written artifact, not memory — and it is written only during a /sync I start.
 - A settled choice goes in docs/learning/decisions.md; a known-unfixed problem goes in docs/learning/debt.md with a permanent ID. Don't convert one into the other.
 - When docs disagree with each other or with the code, stop and name the conflict. Never reconcile silently.
 - Runtime claims need evidence appropriate to this project's shape: test output, a real HTTP response, database state, observed console behavior, a forced failure. Label unverified reasoning as unverified.
@@ -39,6 +40,8 @@ rather than just running it.
 
 ## Git
 I own every git write; read-only git is fine. Default review base: `git merge-base <integration branch> HEAD`.
+That collapses to HEAD when HEAD *is* the integration branch, so the diff comes back empty.
+If that happens, say so and ask me for an explicit base — never report "no changes".
 Scaffolding (`dotnet new`, `dotnet add`, `dotnet ef`) is mine too — ask me to run it, don't run it for me.
 Enforcement is settings.json plus my approval of each Bash call. Nothing here is automatic:
 if you need one of these run, ask me.

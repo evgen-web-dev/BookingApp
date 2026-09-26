@@ -34,19 +34,31 @@ only entries I explicitly accepted.
 4. Write the report to docs/learning/reviews/archive-import-review.md: the
    contradictions from step 2, the classification from step 3, and a numbered
    SHORTLIST of candidate decisions — proposed ID, one-line summary, and which
-   archive file and phase each came from. No full entries yet. End the file with
+   archive file and phase each came from. Propose IDs as D<archive phase>-xx,
+   landing in decisions.md §Pre-harness. A candidate whose substance is already
+   in decisions.md still goes on the shortlist, marked "already present as
+   <ID>" and keeping that ID — C-01–C-08 were hand-lifted before this harness
+   and have never been checked against their source. No full entries yet. End the file with
    which archive content you'd deliberately leave behind, and why.
 5. Move the debt items into docs/learning/debt.md verbatim, IDs intact, creating
-   the file from its template if absent. This is a move, not an extraction — no
-   rationale is invented, so it needs no per-item approval. Say how many moved.
+   the file from its template if absent. An item whose ID is already there was
+   moved before this run: do not re-move or renumber it — diff it against the
+   archive text instead, and report any that differ or are missing entirely.
+   This is a move, not an extraction — no rationale is invented, so it needs no
+   per-item approval. Say how many moved, how many matched, how many differed.
 6. Stop writing. Tell me how many decision candidates are on the shortlist and wait.
 7. Only when I say to start, walk the shortlist with me conversationally, one
    candidate at a time, waiting for my response on each. Show the proposed
-   decisions.md entry as a diff block, and distinguish what the archive actually
+   decisions.md entry as a diff block — for one marked "already present", diff
+   against the live entry, never a fresh append — and distinguish what the archive actually
    states from what you are inferring — if "Why:" or "Rejected:" is not in the
    source, write "not recorded, you'll need to supply it" rather than
    reconstructing it. "Verified by:" is "not yet" unless a command proved it in
    this session. I accept, rewrite or reject each one.
+   Rejecting an entry that is already live deletes nothing. Append one line to
+   that entry — "**REJECTED <date> — still binding until I remove it by hand.**"
+   — with the grep results for its ID, and list it in the report.
 
 Write only the report (step 4) and debt.md (step 5). Append to decisions.md only
-during step 7, and only entries I accepted.
+during step 7 — entries I accepted, plus the rejection marker above. Never
+delete from it.

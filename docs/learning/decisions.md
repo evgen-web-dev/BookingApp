@@ -7,6 +7,8 @@ is @-imported. master.md is orientation — read at phase boundaries, not here.
 Rules that bind choices not yet made. Test: would violating this in a future
 phase be a bug, or merely a different design? Only a bug belongs here. A decision
 is promoted to a constraint when a SECOND phase has to honour it.
+Every constraint carries `Verified by:` — "not yet" until a command proved it
+under this harness. Lifted from a pre-harness doc counts as "not yet".
 
 - **C-01 One failure literal per auth flow.** Login emits only
   `InvalidEmailOrPassword`; refresh/logout only `InvalidRefreshToken`.
@@ -14,28 +16,33 @@ is promoted to a constraint when a SECOND phase has to honour it.
     errors rather than hardcoding one, so a second distinct literal reopens the
     leak silently, and the Identity error mapper won't catch it — it filters
     Identity codes, not ours. This is why `P3-06` lockout is deferred.
+  - Verified by: not yet
 
 - **C-02 `500` means exactly "nothing caught or classified it."**
   - Why: every expected failure is a deliberately-returned `Failure(...)`. An
     uncaught 500 is a bug, never a control-flow branch.
+  - Verified by: not yet
 
 - **C-03 Error-placement discriminator.** A check is field-validation
   (`ValidationProblemDetails`) iff it is resolvable from the payload alone, needs
   no I/O, and naming the field leaks nothing. Otherwise it is a domain code
   (`ProblemDetails`).
   - Why: classification follows *where the check runs*, not what it feels like.
+  - Verified by: not yet
 
 - **C-04 An interface is owned by the layer that depends on it**, not the layer
   that implements it.
   - Why: revised in Phase 3 after getting it backwards in Phase 0. If a use-case
     seems to require an Infrastructure type, invert with a port — don't relocate
     the use-case.
+  - Verified by: not yet
 
 - **C-05 Adapters vs orchestration decides the sub-layer.**
   `Infrastructure/Services` wraps concrete external technology;
   `Application/Services` composes ports with zero concrete framework dependency.
   - Why: this is the rule that relocated `TokenFamilyService` in Phase 4 — a
     service with no infrastructure dependency belongs in Application.
+  - Verified by: not yet
 
 - **C-06 An invariant the database can enforce is enforced there.** If a rule can
   be expressed as a constraint, index, or column type, application-level checking
@@ -43,15 +50,18 @@ is promoted to a constraint when a SECOND phase has to honour it.
   - Why: proven twice — the partial unique index on `NormalizedEmail` protects
     every `Single*` lookup, and `date` columns are the real date-only guarantee
     (`.Date` at the seam is belt-and-suspenders, not the mechanism).
+  - Verified by: not yet
 
 - **C-07 New DTOs use `required` init members.**
   - Why: init-only properties gave test-data ergonomics but cost the
     compile-time non-null guarantee positional records had (`= null!`
     suppression). `required` gets both. Open as `P5-01`.
+  - Verified by: not yet
 
 - **C-08 Validators reject; services transform.**
   - Why: the validation filter reads only `.IsValid` and never re-reads a
     mutated DTO, so normalization in a validator is silently discarded.
+  - Verified by: not yet
 
 ## Standing checks (re-run per change, never "closed")
 A constraint is a rule to honour; a standing check is a question to re-ask.

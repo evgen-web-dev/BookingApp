@@ -17,6 +17,7 @@
       "Bash(git show:*)",
       "Bash(git merge-base:*)",
       "Bash(git rev-parse:*)",
+      "Bash(git for-each-ref:*)",
       "Bash(dotnet --info)",
       "Bash(dotnet --list-sdks)"
     ],
@@ -29,7 +30,8 @@
       "Bash(curl:*)",
       "Bash(sqlcmd:*)",
       "Bash(docker:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(psql:*)"
     ],
     "deny": [
       "Agent",

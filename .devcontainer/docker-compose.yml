@@ -23,8 +23,13 @@ services:
       - nuget-packages:/home/containerdev/.nuget/packages
       - dotnet-usersecrets:/home/containerdev/.microsoft
       - npm-cache:/home/containerdev/.npm
-      # Uncomment for a project with an SPA frontend, adjusting the path:
-      # - frontend-node-modules:/workspace/src/frontend/node_modules
+      # SPA frontend? node_modules wants its own named volume rather than being
+      # written through the bind mount. That takes TWO coupled changes, or
+      # `npm install` fails with EACCES:
+      #   1. here:          - frontend-node-modules:/workspace/<path>/node_modules
+      #   2. in Dockerfile: add that same path to the `mkdir -p`, then rebuild —
+      #      a named volume inherits ownership from the image directory it first
+      #      mounts over, so without it the volume initialises root-owned.
     command: sleep infinity
     depends_on:
       postgres:

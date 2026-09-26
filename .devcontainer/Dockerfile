@@ -56,9 +56,15 @@ RUN mkdir /commandhistory && touch /commandhistory/.bash_history && \
   chown -R ${USERNAME} /commandhistory && \
   echo "export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" >> /home/${USERNAME}/.bashrc
 
-# .npm-global exists because npm's default global prefix is /usr/local (root-owned),
-# so `npm i -g` and some npx paths fail with EACCES as the non-root user.
-RUN mkdir -p /workspace /workspace/src/frontend/node_modules \
+# These dirs must exist and be user-owned BEFORE the volumes mount: a named volume
+# inherits ownership from the image directory it first mounts over, so without this
+# they initialise root-owned and the non-root user can't write to them. Add a path
+# here whenever you add a named volume in docker-compose.yml.
+# Two exceptions: /workspace is a bind mount (host ownership wins — this is only the
+# safety net for a bare `docker run` with no compose), and .npm-global has no volume
+# at all; it exists because npm's default global prefix is /usr/local (root-owned),
+# so `npm i -g` and some npx paths would fail with EACCES.
+RUN mkdir -p /workspace \
       /home/${USERNAME}/.claude /home/${USERNAME}/.nuget/packages \
       /home/${USERNAME}/.npm-global /home/${USERNAME}/.npm /home/${USERNAME}/.microsoft && \
   chown -R ${USERNAME}:${USERNAME} /workspace /home/${USERNAME}/.claude \

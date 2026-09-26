@@ -71,6 +71,15 @@ RUN mkdir -p /workspace \
       /home/${USERNAME}/.nuget /home/${USERNAME}/.npm-global /home/${USERNAME}/.npm \
       /home/${USERNAME}/.microsoft
 
+# making /bin and /obj dirs of each of C# projects to be user-owned
+RUN for p in src/BookingApp.API \
+              src/BookingApp.Application \
+              src/BookingApp.Domain \
+              src/BookingApp.Infrastructure \
+              tests/BookingApp.UnitTests; do \
+      mkdir -p "/workspace/$p/bin" "/workspace/$p/obj"; \
+    done && chown -R ${USERNAME}:${USERNAME} /workspace
+
 WORKDIR /workspace
 
 # .NET behavior only - DOTNET_ROOT and dotnet-on-PATH already come from the base image.

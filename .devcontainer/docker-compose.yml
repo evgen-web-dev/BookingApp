@@ -23,6 +23,16 @@ services:
       - nuget-packages:/home/containerdev/.nuget/packages
       - dotnet-usersecrets:/home/containerdev/.microsoft
       - npm-cache:/home/containerdev/.npm
+      - api-bin:/workspace/src/BookingApp.API/bin
+      - api-obj:/workspace/src/BookingApp.API/obj
+      - application-bin:/workspace/src/BookingApp.Application/bin
+      - application-obj:/workspace/src/BookingApp.Application/obj
+      - domain-bin:/workspace/src/BookingApp.Domain/bin
+      - domain-obj:/workspace/src/BookingApp.Domain/obj
+      - infrastructure-bin:/workspace/src/BookingApp.Infrastructure/bin
+      - infrastructure-obj:/workspace/src/BookingApp.Infrastructure/obj
+      - unittests-bin:/workspace/tests/BookingApp.UnitTests/bin
+      - unittests-obj:/workspace/tests/BookingApp.UnitTests/obj
       # SPA frontend? node_modules wants its own named volume rather than being
       # written through the bind mount. That takes TWO coupled changes, or
       # `npm install` fails with EACCES:
@@ -76,3 +86,13 @@ volumes:
   dotnet-usersecrets:
   # frontend-node-modules:
   npm-cache:
+  api-bin:
+  api-obj:
+  application-bin:
+  application-obj:
+  domain-bin:
+  domain-obj:
+  infrastructure-bin:
+  infrastructure-obj:
+  unittests-bin:
+  unittests-obj:

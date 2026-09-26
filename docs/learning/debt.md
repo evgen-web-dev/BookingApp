@@ -74,7 +74,7 @@ work). Everything else below is verbatim from archive/master-original.md §Debt 
 ### Future features / specified but not built
 | # | Item |
 |---|---|
-| `P3-16` | **Constraints checklist** — the decisions-already-made list consulted before each change. Scheduled to start in Phase 4; **confirm it's live** and carry it forward. |
+| `P3-16` | **Constraints checklist** — the decisions-already-made list consulted before each change. **Confirmed live 2026-09-26:** `decisions.md` §Standing constraints is that list, and it is `@`-imported by CLAUDE.md, so it is consulted every turn by construction. Carry it forward. |
 | `P3-17` | `HandleReuseAsync` → account-wide invalidation via `UpdateSecurityStampAsync`, at the `RevokeTokenFamily` funnel where `reason == TheftDetected`. **Now unblocked by `P3-05`.** |
 | `P3-18` | `/logout-all`, gated by `[Authorize]` — a valid access token *is* cryptographic proof of identity, categorically different from the client-supplied identifier rejected on DoS grounds. Needs `RevokeAllLiveForUser`. |
 | `P3-19` | Redis access-token blacklist keyed by **`TokenFamilyId`**, closing the ≤15-min window where a stolen access token outlives its revoked family. |

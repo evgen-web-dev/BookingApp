@@ -39,7 +39,7 @@ rather than just running it.
   (or Adminer at http://localhost:8080 from the host)
 
 ## Git
-I own every git write; read-only git is fine. Default review base: `git merge-base <integration branch> HEAD`.
+I own every git write; read-only git is fine. Default review base: `git merge-base develop HEAD`.
 That collapses to HEAD when HEAD *is* the integration branch, so the diff comes back empty.
 If that happens, say so and ask me for an explicit base — never report "no changes".
 Scaffolding (`dotnet new`, `dotnet add`, `dotnet ef`) is mine too — ask me to run it, don't run it for me.

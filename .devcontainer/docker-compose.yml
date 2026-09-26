@@ -1,0 +1,73 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TZ: ${TZ:-Etc/UTC}
+        NODE_VERSION: "24.21.0"
+        # First build: "stable". After building, run `claude --version` inside the
+        # container and replace this with that exact X.Y.Z for reproducible rebuilds.
+        CLAUDE_CODE_VERSION: "2.1.274"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      # Host is the SERVICE NAME, not localhost — the app runs inside the compose
+      # network now, so 127.0.0.1 would point at the app container itself.
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-booking_app};Username=${POSTGRES_USER:-booking_app_user};Password=${POSTGRES_PASSWORD:-booking_app_password}"
+    volumes:
+      - ..:/workspace:cached
+      - claude-code-config:/home/containerdev/.claude
+      - claude-code-bashhistory:/commandhistory
+      - nuget-packages:/home/containerdev/.nuget/packages
+      - dotnet-usersecrets:/home/containerdev/.microsoft
+      - npm-cache:/home/containerdev/.npm
+      # Uncomment for a project with an SPA frontend, adjusting the path:
+      # - frontend-node-modules:/workspace/src/frontend/node_modules
+    command: sleep infinity
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # Postgres is native on every arch and ready in ~2s, so waiting for healthy
+      # costs almost nothing — unlike the emulated SQL Server this replaced, where
+      # a 40s wait would have blocked the IDE. If pg_isready ever misreports and
+      # the container won't open, drop back to a bare `- postgres`.
+
+  postgres:
+    image: postgres:16
+    # No container_name on purpose: your standalone host compose declares
+    # booking_app_db, and a fixed name would collide if both ever ran.
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-booking_app}
+      POSTGRES_USER: ${POSTGRES_USER:-booking_app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-booking_app_password}
+    ports:
+      # Published so host tools (Rider's DB explorer, a host psql) can connect.
+      # The app container reaches it as `postgres:5432` regardless of this.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - booking_app_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-booking_app_user} -d ${POSTGRES_DB:-booking_app}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  adminer:
+    image: adminer
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      - postgres
+
+volumes:
+  claude-code-config:
+  claude-code-bashhistory:
+  nuget-packages:
+  booking_app_pgdata:
+  dotnet-usersecrets:
+  # frontend-node-modules:
+  npm-cache:

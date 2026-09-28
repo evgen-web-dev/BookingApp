@@ -1,18 +1,25 @@
-# Phase <N> — <name>
+# Phase 7 — Data importer
 
 ## Goal
-<What I should be able to build and explain by the end, in one or two sentences.>
+We need to implement data-importer of JSON data that is meant to import data about hosts and their apartments.
+Those "new hosts and apartments" are treated as new data, from third-party booking company we are "acquiring".
 
 ## In scope
-- <thing>
+- implement import of data about hosts and apartments - with using Apartment entity, repositories, 
+IUnitOfWork, Identity user creation with ApartmentsWithBookingsSeeder.cs as an example / reference for hosts can be created at the current state of the project
+- ensure our import flow is idempotent
+- provenance of imported users is recorded 
+
 
 ## Out of scope (say so if I ask for these)
-- <thing>
+- do not import data about bookings of new hosts/apartments
+- do not implement dedicated User-related `Host` entity
+- do not implement force-credentials-rotation for newly-imported host-users
 
 ## Debt this phase owns
-<IDs from debt.md this phase will fix or must honour. This is the only place debt
-becomes visible per turn — debt.md itself is not imported.>
-- <P<N>-xx>
+Pending — filled after `/import-history 7`. Known already:
+- `P5-01` — must honour, not fix: any new DTO for the JSON payload uses `required`
+  init members, per `C-07`.
 
 
 ## Done when
@@ -20,10 +27,19 @@ becomes visible per turn — debt.md itself is not imported.>
 - [ ] <observable condition> — evidence: <...>
 
 ## Current step
-<The one thing I'm working on right now.>
+Run `/import-history 7` in a fresh session. This file's Goal + In scope are the lens
+it filters against; it does not read this file directly — CLAUDE.md's `@`-import is
+what puts it in context.
 
 ## Open questions
-- <question I haven't resolved>
+- decide the "shape" of importing tool - console app, a library, or something else
+- decide about if we need to introduce some new indexes/constraints within the scope of this phase
+- decide how provenance of imported users is recorded - column on AspNetUsers table, a side table, "something else"
+- decide how we can persist current state of import-process and state of upsert operations
+to ensure idempotency
+- decide the transaction boundary. `UserManager.CreateAsync` and `AddToRoleAsync` each write
+immediately, so `IUnitOfWork` does not span Identity writes: what happens to hosts already
+created when a later record in the same import fails?
 
 ## Predictions outstanding
-- <command I'm about to run> → I predict <outcome>
+- none outstanding (no build/test/run command was executed in the scoping session)

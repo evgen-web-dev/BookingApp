@@ -69,7 +69,19 @@ work). Everything else below is verbatim from archive/master-original.md §Debt 
 | `P6-07` | Adopt the implicit `Success` operator **solution-wide** (scoped to `BookingService` in 6.3); own reviewed pass. Ceiling: non-generic `OperationResult.Success()` can never use it. |
 | `P6-08` | Bookings reads use plain `[Authorize]` rather than role-gating; both are caller-scoped so safe. **Decided: leave as-is for now.** |
 | `P6-09` | Sort key for paginated lists (`Id` vs `CheckIn`/`CreatedAt`) — sorting is non-negotiable, the key is a UX call. |
+| `P6-03` | `FindAvailableAsync` safe by upstream guard, not locally — **Low / note — stands**. Nullable params only behave for both-null or both-set; the validator guarantees both-or-neither. Not reused from an unvalidated path in Phase 6. |
 | `P6-TEST-OVERLAP` | Unit-test the pure overlap function — the obvious first automated test (Phase 6 shipped test-free). |
+
+*`P6-03` was moved here by `/import-history` on 2026-09-29 from
+`archive/phase-6.md:167`, the only ID-carrying item that never reached
+`master-original.md`'s ledger. Its source table has a separate Status column; the
+status text was folded into the Item cell unchanged. No wording was altered.*
+
+### Introduced in Phase 7 *(surfaced during the archive import)*
+| # | Item |
+|---|---|
+| `P7-02` | **`AvailableApartmentsPaginatedRequest.AvailableFrom`/`AvailableTo` use `set`, not `init`** (`Application/DTOs/Apartment/AvailableApartmentsPaginatedRequest.cs:7-8`) — the only DTO where `C-08` ("validators reject; services transform") rests on project convention rather than the compiler; a validator-side mutation there would persist into the action instead of being impossible. Its own base `PaginatedRequest.PageSize`/`PageNumber` are already `init` and bind fine from `[FromQuery]`, so the `set` buys nothing. **Fix: `set` → `init`.** No live bug — no validator mutates anything (all six checked 2026-09-29). Surfaced by `/import-history`, outside Phase 7's scope. |
+| `P7-03` | **`PageQueryParams` built from a raw `PaginatedRequest` in two places, in two layers** — `API/Controllers/ApartmentsController.cs:26` and `Application/Services/BookingService.cs:96`, identical lines. `archive/phase-6.md:220` claims the escape hatch is "mitigated by reading it in exactly one place"; it is read in two. Not a live bug (both sites agree today); the risk is drift if the clamp policy or property set changes. Structural cause: Phase 6 deliberately gave the read path no service layer (`archive/phase-6.md:106`), so apartments translate in the controller while bookings translate in a service. **Fix: one door in** — e.g. a `PageQueryParams.From(PaginatedRequest)` factory — which is `D6-01` applied to itself. Surfaced by `/import-history` 2026-09-30, outside Phase 7's scope. |
 
 ### Future features / specified but not built
 | # | Item |

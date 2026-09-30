@@ -20,7 +20,8 @@ treatment, not gentler. *(source: §Context for Claude)*
 6. **Booking core** ✅ — Apartment/Booking, availability, pagination, ownership checks.
 7. **Scoped, plan not yet committed** — JSON data importer: hosts and their apartments
    from a third-party booking company. Goal, In scope and Out of scope drafted in
-   current-phase.md; Done-when pending `/import-history 7`, then `/plan-review`.
+   current-phase.md; `/import-history 7` done (2026-09-30), Done-when and Debt-this-phase-owns
+   still pending, then `/plan-review`.
    *(Not one of the Phase 6 close-out candidates — that list was set aside.)*
 
 ## Calibration — why external review is a gate and internal review is a filter

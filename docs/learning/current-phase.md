@@ -27,9 +27,14 @@ Pending — filled after `/import-history 7`. Known already:
 - [ ] <observable condition> — evidence: <...>
 
 ## Current step
-Run `/import-history 7` in a fresh session. This file's Goal + In scope are the lens
-it filters against; it does not read this file directly — CLAUDE.md's `@`-import is
-what puts it in context.
+`/import-history 7` is done (2026-09-30) — its report is
+`docs/learning/reviews/archive-import-review.md`; 22 decision candidates were walked and
+accepted, `P6-03` was moved into debt.md, `P7-02`/`P7-03` were added.
+Next: **I fill in Done-when and the rest of Debt this phase owns** in this file, informed
+by §1 of that report (the four findings that bear on "done": §1.1 `required` DTOs,
+§1.6 transaction shape, §1.7 the seeder's two idempotency mechanisms, §1.10 the
+role-whitelist gap). Then commit, then `/plan-review` in a fresh session — fresh so the
+critique meets the draft cold.
 
 ## Open questions
 - decide the "shape" of importing tool - console app, a library, or something else
@@ -38,8 +43,9 @@ what puts it in context.
 - decide how we can persist current state of import-process and state of upsert operations
 to ensure idempotency
 - decide the transaction boundary. `UserManager.CreateAsync` and `AddToRoleAsync` each write
-immediately, so `IUnitOfWork` does not span Identity writes: what happens to hosts already
-created when a later record in the same import fails?
+immediately, but through the same scoped `DbContext`, so an open `IUnitOfWork` transaction
+*does* span them (`D3-03` — unverified under this harness, worth forcing): what happens to
+hosts already created when a later record in the same import fails?
 
 ## Predictions outstanding
 - none outstanding (no build/test/run command was executed in the scoping session)

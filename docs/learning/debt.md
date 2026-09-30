@@ -9,7 +9,10 @@ owns in current-phase.md, and /review-as-mentor checks for debt added without an
 entry here.
 
 Standing checks live in `decisions.md` (they are constraints you re-verify, not open
-work). Everything else below is verbatim from archive/master-original.md §Debt Ledger.
+work). Everything else below is verbatim from archive/master-original.md §Debt Ledger,
+with three recorded exceptions: `P3-16` was updated when the harness answered its own
+question, `P4-03`'s premise was corrected on 2026-09-30 (conclusion unchanged), and
+`P6-03` was moved in from archive/phase-6.md, which the program ledger had never carried.
 
 ### Resolved in Phase 4 ✅ *(detail in the phase-4 archive; kept here for traceability)*
 | # | Resolution |
@@ -38,7 +41,7 @@ work). Everything else below is verbatim from archive/master-original.md §Debt 
 | `P3-06` | Auth-endpoint rate limiting — **deferred, not descoped.** Correct API is partitioned `AddPolicy`; `429` is middleware-level (outside the `ProblemDetails` contract); account **lockout stays out** because a second failure literal breaks the enumeration invariant. *[Q16]* |
 | `P4-01` | Global all-endpoint rate limiting (distinct from `P3-06`'s auth focus). |
 | `P4-02` | Refresh-token read/write **race**: a stale-read window exists under READ COMMITTED but is **not** exploitable into double-issuance (the guarded write resolves it). Worth a two-terminal confirmation. |
-| `P4-03` | `RequireUniqueEmail = false` leaves the `DuplicateEmail`/`InvalidEmail` map rows **dead** — remove the rows or flip the flag. |
+| `P4-03` | The `DuplicateEmail` map rows are **dead** — remove the rows or flip the flag. **Premise corrected 2026-09-30, conclusion unchanged:** the archive wrote this as "`RequireUniqueEmail = false` leaves the `DuplicateEmail`/`InvalidEmail` map rows dead". Neither named thing exists as written. There is no `RequireUniqueEmail` anywhere in `src/` — `Infrastructure/DependencyInjectionExtensions.cs:34` is a bare `AddIdentityCore<User>()` with no options lambda — so "dead" rests on the framework default being `false`, which is **still unverified**. And there is no `InvalidEmail` row: `Infrastructure/Identity/IdentityErrorCodesDefaultDenyMapper.cs:22-24,36-38` carry `DuplicateUserName`, `DuplicateEmail`, `InvalidUserName`. Note also that the partial unique index on `NormalizedEmail` (`P3-01`) means a duplicate email now fails as a DB error, not as an `IdentityError`, which kills the row a second way. |
 | `P4-04` | Smaller batch: `WWW-Authenticate` on 401s (RFC 9110); `503`-vs-`500` for DB-unreachable; validator `Type` caching; age boundary `<=`/`<`; `CreatedAtAction` for register (needs a GET endpoint; carried from `P3-12`); login timing side-channel. |
 | `P3-07` | Request body size limit (Kestrel / `[RequestSizeLimit]`) — **status not reported in the Phase 4 summary;** recorded as deferred per the triage note that Kestrel's default backstops it. *Confirm whether an explicit cap shipped.* |
 
@@ -78,6 +81,9 @@ work). Everything else below is verbatim from archive/master-original.md §Debt 
 status text was folded into the Item cell unchanged. No wording was altered.*
 
 ### Introduced in Phase 7 *(surfaced during the archive import)*
+*`P7-01` is deliberately unassigned — it stays free for Phase 7's first finding from its own
+build work. The gap is not a lost item.*
+
 | # | Item |
 |---|---|
 | `P7-02` | **`AvailableApartmentsPaginatedRequest.AvailableFrom`/`AvailableTo` use `set`, not `init`** (`Application/DTOs/Apartment/AvailableApartmentsPaginatedRequest.cs:7-8`) — the only DTO where `C-08` ("validators reject; services transform") rests on project convention rather than the compiler; a validator-side mutation there would persist into the action instead of being impossible. Its own base `PaginatedRequest.PageSize`/`PageNumber` are already `init` and bind fine from `[FromQuery]`, so the `set` buys nothing. **Fix: `set` → `init`.** No live bug — no validator mutates anything (all six checked 2026-09-29). Surfaced by `/import-history`, outside Phase 7's scope. |

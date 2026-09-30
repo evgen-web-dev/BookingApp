@@ -1,108 +1,121 @@
 # Handoff
 
-Updated: 2026-09-28 — written only during a sync I start.
+Updated: 2026-09-30 — written only during a sync I start.
 
 ## Where we stopped
-Phase 7 was scoped. Topic: a **JSON data importer** that brings in hosts and their
-apartments from a third-party booking company we are notionally acquiring.
+**`/import-history 7` is complete**, in a session of its own, plus this sync. The run read
+the whole archive, audited it against source, and produced
+`docs/learning/reviews/archive-import-review.md`: **14 contradictions** between archive and
+code, a classification of the rest, a 22-candidate shortlist, and the walk outcomes. The
+debt ledger was moved, and all 22 candidates were walked one at a time.
 
-`current-phase.md` is now partially filled, deliberately: Goal, In scope, Out of
-scope, Open questions, Current step, and one known debt ID. **Done-when is still
-the template** — it waits for the import's contradictions report.
+`current-phase.md` is still **partially filled** — Done-when is the template, and Debt this
+phase owns names only `P5-01`. That is the next piece of work and it is mine to write.
 
-No production or test code was written. No `dotnet build`, `dotnet test`,
-`dotnet run`, curl or psql command was executed, so nothing here rests on runtime
-evidence. Working tree at sync time: `current-phase.md`, `handoff.md`, `master.md`
-modified; nothing committed.
+No production or test code was written. No `dotnet build`, `dotnet test`, `dotnet run`, curl
+or psql command was executed, so **nothing in this session rests on runtime evidence** — it
+is archive reading, source inspection and document work only.
+
+Working tree at sync time: the import's own output is committed as `114d97b`
+(`decisions.md`, `debt.md`, `reviews/archive-import-review.md`). This sync then modified
+`current-phase.md`, `handoff.md`, `debt.md` and one line of `master.md`; not yet committed.
 
 ## Next action
-1. **`/import-history 7`, in a fresh session of its own.** The lens now travels by
-   itself: CLAUDE.md `@`-imports `current-phase.md`, so a clean session gets the
-   topic for free. That was the point of putting it in the file.
-2. Finish `current-phase.md` — **Done-when** and the rest of **Debt this phase
-   owns** — informed by the import's step-2 contradictions report.
-3. `/plan-review`.
+1. **Fill in `current-phase.md`** — Done-when, and the rest of Debt this phase owns. §1 of
+   the review is the input; four findings bear directly on what "done" means:
+   §1.1 (`required` DTOs were never adopted), §1.6 (the create-booking transaction shape is
+   not what the docs say), §1.7 (the seeder has two idempotency mechanisms, not one),
+   §1.10 (the role whitelist is not enforced where the archive says it is).
+2. **Commit.** `current-phase.md` is `@`-imported, so the finished plan travels by itself —
+   it needs no handoff entry to reach the next session.
+3. **`/plan-review` in a fresh session.** Fresh on purpose: a reviewer that co-authored the
+   draft is worth less than one meeting it cold. That is this project's own calibration
+   finding, not a procedural preference.
 
 ## Decisions locked this session
-Harness and scope decisions, not project-design rules, so deliberately NOT in
-decisions.md — none would bind a line of booking-app code. Each is encoded where
-it operates; this list is the index.
+22 candidates walked, **22 accepted, 0 rejected** — so no entry carries a `REJECTED` marker
+and nothing was deleted from `decisions.md`.
 
-- **The import's lens lives in `current-phase.md`, not the invocation message.**
-  The handoff's carried-forward open question, now closed. `/import-history`
-  never reads that file — grep confirms zero references to it in the skill, while
-  `sync`, `plan-review` and `review-as-mentor` all name it. The file route works
-  through CLAUDE.md's `@`-import instead, which survives compaction; a topic
-  stated only in the opening message does not. Encoded in `current-phase.md`.
-- **Three Phase 7 scope exclusions.** No bookings imported; no dedicated `Host`
-  entity; no forced-credentials-rotation for imported hosts. Encoded in
-  `current-phase.md` §Out of scope.
-- **Provenance recording is In scope; its mechanism is an Open question.** Phase 7
-  is the only code that will ever know which company a host came from, so
-  deferring the question forecloses it rather than defers it. The *shape* — column
-  on `AspNetUsers`, side table, something else — genuinely doesn't need answering
-  to run the import. Encoded in `current-phase.md` (In scope + Open questions).
-  Note: the Out-of-scope line was narrowed from "new entities" to `Host`
-  specifically, so a provenance side table is not forbidden.
-- **Do not correct `P4-03`'s wording before `/import-history` runs.**
-  `/import-history` step 5 diffs debt.md against the archive text and reports
-  differences; editing the entry now manufactures a spurious mismatch. The
-  imprecision is recorded under Still unverified instead.
-- **Carried from the previous handoff so the rewrite doesn't lose it:** a
-  devcontainer rebuild recreates the `app` container and so ends the session
-  running inside it. Sync before rebuilding, never after.
+- **Amended live entries (3):** `C-04` (boundary test added — a concrete dependency *within*
+  a layer is fine, across the boundary is the violation; revision site corrected Phase 0 →
+  3.2), `C-06` (tool line — `CHECK` can't reference other rows, so a partial unique index is
+  the tool for conditional uniqueness), `C-08` (`Why` rewritten: the old mechanism did not
+  survive reading `AsyncValidationFilter.cs:31-39` — the same DTO instance reaches the
+  action, so a mutation would persist rather than be discarded).
+- **New in §Pre-harness (13):** `D3-01`…`D3-08`, `D4-01`, `D5-01`, `D6-01`, `D6-02`, `D6-03`.
+- **Accepted unchanged (6):** `C-01`, `C-02`, `C-03`, `C-05`, `C-07`, §Standing checks
+  *ID exposure*.
+- Shaped during the walk rather than accepted as proposed: `D3-07` gained the
+  service-wrapper corollary; `D5-01` was **narrowed** from eight test conventions to the two
+  that decide whether a test asserts anything; `D6-01`'s live violation was split out as
+  debt (`P7-03`) instead of being recorded inside a decision, per CLAUDE.md's "don't convert
+  one into the other"; `D6-02`'s `Revisit if` was supplied by me, the archive having none.
+- `D6-02` and `D6-03` were recorded in the archive as **substrate facts**, not decisions.
+  Promoting them was a deliberate call, noted in both entries.
+
+Corrections made during this sync, each resolved by me before writing:
+- `current-phase.md`'s transaction-boundary open question carried a **false premise** — it
+  said `IUnitOfWork` does not span Identity writes. `D3-03` says it does. Premise removed,
+  question kept.
+- `P4-03`'s premise corrected now that the import's verbatim diff has run (the handoff's
+  standing "don't touch it yet" instruction has expired). Its **conclusion is unchanged**.
 
 ## Open questions carried forward
-The five in `current-phase.md` §Open questions are the live ones — importer shape
-(console app / library / other), new indexes or constraints, provenance mechanism,
-idempotency state, and the transaction boundary. Not duplicated here; that file is
-`@`-imported and this one is not.
+The five in `current-phase.md` §Open questions are the live ones — importer shape, new
+indexes or constraints, provenance mechanism, idempotency state, and the transaction
+boundary (now reworded). Not duplicated here; that file is `@`-imported and this one is not.
 
-Still open and not owned by that file:
-- Whether debt surfaced outside a phase needs an ID space of its own. Carried
-  unchanged. Phase 7 now exists, so it can number anything that survives.
-- Whether `C-06`'s `Verified by:` should be able to record *partial* verification.
-  This session proved half of it from source but left the field at "not yet",
-  because the file's own rule is "not yet until a command proved it" and reading a
-  migration is not that. See Still unverified.
+New from the review, §2.4:
+- **How `AddToRoleAsync` fails on a role that doesn't exist** — an exception from the user
+  store, or a failed `IdentityResult`? Filed *verify-first*, following the `ObjectResult`
+  precedent that became `P6-FIX-200`. Decides whether role assignment belongs inside
+  per-record error handling or in a pre-flight check. Deliberately not in `debt.md` (nothing
+  known broken) and not in `decisions.md` (nothing chosen).
+- **Two un-IDed debt items with no home:** the `Microsoft.NET.Test.Sdk` 17.4.1 → 17.14.1
+  bump, and validator relocation (validators live in the API layer but validate Application
+  DTOs, forcing the test project to reference the API). Both need IDs from me to be tracked.
+
+Still open and not owned by `current-phase.md`:
+- Whether `C-06`'s `Verified by:` should be able to record *partial* verification. Carried
+  unchanged — this session added more half-proved-from-source claims, so the question is
+  now load-bearing rather than theoretical.
+- Whether debt surfaced outside a phase needs its own ID space. **Partially answered in
+  practice:** `P7-02`/`P7-03` were numbered by the current phase even though Phase 7 hasn't
+  started building, and `P7-01` was left unassigned for Phase 7's own first finding.
+- Carried unchanged: a devcontainer rebuild recreates the `app` container and so ends the
+  session running inside it. Sync before rebuilding, never after.
 
 ## Predictions and outcomes
-None. No command requiring a prediction was run this session — the work was
-scoping and document reconciliation only.
+**None.** No command requiring a prediction was run this session. Every claim below is
+source-read or reasoning, and is labelled as such.
 
 ## Still unverified
-- **`C-06`, half-closed by source inspection.** The partial unique index is real:
-  `Migrations/20260814180923_AddUniqueIndexOnUserNormalizedEmail.cs:17-22` drops
-  `EmailIndex` and recreates it on `NormalizedEmail` with `unique: true` and
-  `filter: "NormalizedEmail" IS NOT NULL`. That is migration *source*, not live
-  schema, and the `date`-columns half is unchecked. Cheapest close:
-  `psql -h postgres -U booking_app_user -d booking_app -c "\d \"AspNetUsers\""`
-  for the index, and the same on `Bookings` for the column types.
-- **The other seven constraints.** `C-01`–`C-05`, `C-07`, `C-08` all still read
-  `Verified by: not yet`.
-- **`P4-03`'s premise.** The entry says "`RequireUniqueEmail = false`", but there
-  is no such setting anywhere in `src/`:
-  `Infrastructure/DependencyInjectionExtensions.cs:34` is a bare
-  `services.AddIdentityCore<User>()` with no options lambda. The claim therefore
-  rests on the framework default being `false`, which I did not verify. Its
-  conclusion is probably right; its wording describes a line that does not exist.
-- **The seeder's crash-recovery shape, reasoned from source only.**
-  `ApartmentsWithBookingsSeeder` guards on `Apartments.AnyAsync()` (line 22) while
-  `SeedHostUser` recovers an existing user by `FindByEmailAsync` (line 51). So a
-  crash between user creation and the apartment `SaveChangesAsync` appears to
-  self-heal on re-run. **Unverified** — never forced. Worth forcing in Phase 7,
-  because it is the shape of idempotency the importer wants.
-- **Two EF/Identity mechanism claims I asserted in conversation and never ran.**
-  Phase 7's persistence approach leans on both, so they are predictions, not facts:
-  (a) EF would populate `Apartment.OwnerId` from `apartment.Owner = newUser` even
-  though only the one-sided nav exists — `User` has no `List<Apartment>`;
-  (b) a `User` inserted through the EF graph rather than `UserManager` would be
-  invisible to `FindByEmailAsync`, because `NormalizedEmail`, `PasswordHash`,
-  `SecurityStamp` and `ConcurrencyStamp` are never populated. Claim (b) is the
-  reason the importer must go through `UserManager`, so it is worth forcing rather
-  than assuming — and forcing it also exercises the partial unique index in `C-06`.
-- **Carried unchanged from the previous handoff, still unmeasured:** the API port
-  (`5184` deduced from `launchSettings.json`, app not run since); host access to
-  Scalar (loopback bind + devcontainer forwarding — mechanism reasoning only); and
-  whether the two compose stacks have separate databases (both declare an
-  unqualified `booking_app_pgdata`; no docker CLI in this container).
+- **Every entry in `decisions.md`.** All 8 constraints and all 13 pre-harness decisions read
+  `Verified by: not yet`. No command ran this session, so none could be closed.
+- **`C-06`, unchanged from the last handoff.** The partial unique index is real in migration
+  *source* (`Migrations/20260814180923_…cs:17-22`) and in the EF config
+  (`UserEntityTypeConfiguration.cs:14-16`), but that is not live schema, and the
+  `date`-columns half is unchecked. Cheapest close:
+  `psql -h postgres -U booking_app_user -d booking_app -c '\d "AspNetUsers"'`, same on
+  `Bookings` for the column types.
+- **`D3-03`** — that an open `IUnitOfWork` transaction really does span
+  `UserManager.CreateAsync`. Phase 3 claims a forced-rollback check, pre-harness. Cheapest
+  close: begin a transaction, create a user, roll back, inspect `AspNetUsers`. **Highest
+  value to force in Phase 7** — the phase's transaction boundary rests on it.
+- **`D6-02`'s index-exclusion reasoning** — that an EF-graph insert leaves `NormalizedEmail`
+  null, putting the row outside the *filtered* unique index and so outside `C-06`'s
+  guarantee entirely, not merely leaving it unhashed. Inference from the filter expression
+  plus where normalization happens. Forcing it also exercises `C-06`.
+- **`D6-03`'s failure mode** — see Open questions.
+- **`P4-03`'s conclusion.** Its premise is now corrected, but "the rows are dead" still
+  rests on Identity's `RequireUniqueEmail` defaulting to `false`, which I did not verify —
+  there is no such setting anywhere in `src/`.
+- **`P7-02`'s rationale** — that `init` binds fine from `[FromQuery]`. The evidence is that
+  `PaginatedRequest`'s own `init` properties bind today on that exact type
+  (`ApartmentsController.cs:24`); the mechanism (init is a compiler restriction, not a CLR
+  one) was reasoned, not forced.
+- **Carried unchanged, still unmeasured:** the API port (`5184`, deduced from
+  `launchSettings.json`; app not run since), host access to Scalar (loopback bind +
+  devcontainer forwarding, mechanism reasoning only), and whether the two compose stacks
+  have separate databases (both declare an unqualified `booking_app_pgdata`; no docker CLI
+  in this container).
